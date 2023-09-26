@@ -1,14 +1,19 @@
 #include <node_api.h>
-// #include <X11/Xlib.h>
-// #include <X11/keysym.h>
-// #include <X11/extensions/XTest.h>
-// #include <unistd.h>
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+#include <X11/extensions/XTest.h>
+#include <unistd.h>
 #include <cstdio>
 #include <thread>
 #include <vector>
 #include "main.h"
 
-// This file is not finished.
+#define GetDisplay(display, ret)                \
+    Display *(display) = XOpenDisplay(nullptr); \
+    if ((display) == nullptr)                   \
+    {                                           \
+        return (ret);                           \
+    }
 
 Point f_get_screen_size()
 {
@@ -36,6 +41,7 @@ Point f_get_cursor_position()
     XQueryPointer(display, rootWindow, &event.xbutton.root, &event.xbutton.window,
                   &event.xbutton.x_root, &event.xbutton.y_root,
                   &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
+    XFlush(display);
     XCloseDisplay(display);
     Point p(event.xbutton.x_root, event.xbutton.y_root);
     return p;
@@ -48,239 +54,164 @@ bool f_set_cursor_position(int x, int y)
     {
         return false;
     }
-    int x = 500;
-    int y = 500;
     XWarpPointer(display, None, DefaultRootWindow(display), 0, 0, 0, 0, x, y);
-
-    XTestFakeButtonEvent(display, Button1, true, CurrentTime);
-    XTestFakeButtonEvent(display, Button1, false, CurrentTime);
-
     XFlush(display);
     XCloseDisplay(display);
     return true;
 }
 
+#define IsDownMacro(check)                                                                                                          \
+    GetDisplay(display, false);                                                                                                     \
+    Window root = DefaultRootWindow(display);                                                                                       \
+    XEvent event;                                                                                                                   \
+    XGrabPointer(display, root, False, ButtonPressMask | ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime); \
+    XMaskEvent(display, ButtonPressMask, &event);                                                                                   \
+    if (event.type == ButtonPress && (check))                                                                                       \
+    {                                                                                                                               \
+        XUngrabPointer(display, CurrentTime);                                                                                       \
+        XCloseDisplay(display);                                                                                                     \
+        return true;                                                                                                                \
+    }                                                                                                                               \
+    XUngrabPointer(display, CurrentTime);                                                                                           \
+    XCloseDisplay(display);                                                                                                         \
+    return false;
+
 bool f_is_mouse_left_down()
 {
-    return GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+    IsDownMacro(event.xbutton.button == Button1);
 }
 
 bool f_is_mouse_right_down()
 {
-    return GetAsyncKeyState(VK_RBUTTON) & 0x8000;
+    IsDownMacro(event.xbutton.button == Button3);
 }
 
 bool f_is_mouse_middle_down()
 {
-    return GetAsyncKeyState(VK_MBUTTON) & 0x8000;
+    IsDownMacro(event.xbutton.button == Button2);
 }
+
+#define ClickMacro(btn)                                       \
+    GetDisplay(display, false);                               \
+    XTestFakeButtonEvent(display, (btn), True, CurrentTime);  \
+    XFlush(display);                                          \
+    usleep(10000); /* Required for linux */                   \
+    XTestFakeButtonEvent(display, (btn), False, CurrentTime); \
+    XFlush(display);                                          \
+    XCloseDisplay(display);                                   \
+    return true;
 
 bool f_click_left()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN + MOUSEEVENTF_LEFTUP;
-    INPUT_SEND(input);
-    return true;
+    ClickMacro(Button1);
 }
 
 bool f_click_right()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN + MOUSEEVENTF_RIGHTUP;
-    INPUT_SEND(input);
-    return true;
+    ClickMacro(Button3);
 }
 
 bool f_click_middle()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN + MOUSEEVENTF_MIDDLEUP;
-    INPUT_SEND(input);
-    return true;
+    ClickMacro(Button2);
 }
+
+#define DownUpMacro(btn, type)                                 \
+    GetDisplay(display, false);                                \
+    XTestFakeButtonEvent(display, (btn), (type), CurrentTime); \
+    XFlush(display);                                           \
+    XCloseDisplay(display);                                    \
+    return true;
 
 bool f_mouse_left_down()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-    INPUT_SEND(input);
-    return true;
+    DownUpMacro(Button1, True);
 }
 
 bool f_mouse_right_down()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-    INPUT_SEND(input);
-    return true;
+    DownUpMacro(Button3, True);
 }
 
 bool f_mouse_middle_down()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-    INPUT_SEND(input);
-    return true;
+    DownUpMacro(Button2, True);
 }
 
 bool f_mouse_left_up()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    INPUT_SEND(input);
-    return true;
+    DownUpMacro(Button1, False);
 }
 
 bool f_mouse_right_up()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-    INPUT_SEND(input);
-    return true;
+    DownUpMacro(Button3, False);
 }
 
 bool f_mouse_middle_up()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-    INPUT_SEND(input);
-    return true;
+    DownUpMacro(Button2, False);
 }
 
 bool f_is_mouse_swapped()
 {
-    return GetSystemMetrics(23) != 0;
+    return true; // TODO: It really depends on so many things.
 }
 
 bool f_mouse_scroll(int x, int y)
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-
-    if (x != 0)
+    GetDisplay(display, false);
+    Window root = DefaultRootWindow(display);
+    // TODO: horizontal scrolling
+    for (int i = 0; i < y; ++i)
     {
-        input.mi.mouseData = x;
-        input.mi.dwFlags = MOUSEEVENTF_HWHEEL;
-        INPUT_SEND(input);
+        XTestFakeButtonEvent(display, Button4, True, CurrentTime);
+        XFlush(display);
+        usleep(10000);
+        XTestFakeButtonEvent(display, Button4, False, CurrentTime);
+        XFlush(display);
     }
-
-    if (y != 0)
-    {
-        input.mi.mouseData = y;
-        input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-        INPUT_SEND(input);
-    }
-
-    if (x != 0 || y != 0)
-    {
-        input.mi.dwFlags = 0;
-        INPUT_SEND(input);
-    }
-    return true;
+    XCloseDisplay(display);
 }
 
 bool f_press_key(bool is_ascii, int got)
 {
-    if (is_ascii)
-    {
-        got = VkKeyScanA(static_cast<CHAR>(got));
-    }
-
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = got;
-    input.ki.dwFlags = 0;
-    INPUT_SEND(input);
-
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
-    INPUT_SEND(input);
-    return true;
+    GetDisplay(display, false);
+    Window root = DefaultRootWindow(display);
+    KeyCode keyCode = XKeysymToKeycode(display, got);
+    XTestFakeKeyEvent(display, keyCode, True, CurrentTime);
+    XFlush(display);
+    XTestFakeKeyEvent(display, keyCode, False, CurrentTime);
+    XFlush(display);
+    XCloseDisplay(display);
 }
 
 bool f_key_down(bool is_ascii, int got)
 {
-    if (is_ascii)
-    {
-        got = VkKeyScanA(static_cast<CHAR>(got));
-    }
-
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = got;
-    input.ki.dwFlags = 0;
-    INPUT_SEND(input);
-    return true;
+    GetDisplay(display, false);
+    Window root = DefaultRootWindow(display);
+    KeyCode keyCode = XKeysymToKeycode(display, got);
+    XTestFakeKeyEvent(display, keyCode, True, CurrentTime);
+    XFlush(display);
+    XCloseDisplay(display);
 }
 
 bool f_key_up(bool is_ascii, int got)
 {
-    if (is_ascii)
-    {
-        got = VkKeyScanA(static_cast<CHAR>(got));
-    }
-
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = got;
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
-    INPUT_SEND(input);
-    return true;
+    GetDisplay(display, false);
+    Window root = DefaultRootWindow(display);
+    KeyCode keyCode = XKeysymToKeycode(display, got);
+    XTestFakeKeyEvent(display, keyCode, False, CurrentTime);
+    XFlush(display);
+    XCloseDisplay(display);
 }
 
 int f_show_message_box(char *textBuf, char *captionBuf, int flags)
 {
-    LPCWSTR textW = to_lpcwstr(textBuf);
-    LPCWSTR captionW = to_lpcwstr(captionBuf);
-
-    int res = MessageBoxW(NULL, textW, captionW, flags);
-
-    delete[] textW;
-    delete[] captionW;
-    return res;
-}
-
-INT_PTR CALLBACK CustomMessageBoxProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        switch (LOWORD(wParam))
-        {
-        case IDOK:
-        {
-            char buffer[256];
-            LPWSTR lpwstr = to_lpwstr(buffer);
-            LPCWSTR lpcwstr = to_lpcwstr(buffer);
-            GetDlgItemTextW(hwndDlg, IDC_EDIT, lpwstr, sizeof(buffer));
-            MessageBoxW(hwndDlg, lpcwstr, L"User Input", MB_OK | MB_ICONINFORMATION);
-            delete[] lpwstr;
-            delete[] lpcwstr;
-            EndDialog(hwndDlg, 0);
-        }
-            return TRUE;
-
-        case IDCANCEL:
-            EndDialog(hwndDlg, 0);
-            return TRUE;
-        }
-        break;
-    }
-    return FALSE;
+    return 0; // ?
 }
 
 int f_show_prompt()
 {
-    return DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CUSTOM_DIALOG), NULL, CustomMessageBoxProc);
+    return 0; // ?
 }

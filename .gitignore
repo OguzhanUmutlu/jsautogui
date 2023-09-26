@@ -1,5 +1,4 @@
 .idea
-.vscode
 build
 package-lock.json
 node_modules
