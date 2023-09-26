@@ -1,5 +1,5 @@
 /*** @type {Record<string, Function>} */
-const native = require("./build/Release/jsautogui_win");
+const native = require("./build/Release/jsautogui");
 
 const eType = (a, t, n) => {
     if (typeof a !== t) {
