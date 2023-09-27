@@ -15,7 +15,7 @@
                     "OS!='win' and OS!='mac'",
                     {
                         "sources": ["src/system/x11fn.cpp"],
-                        "ldflags": ["-lX11", "-lXtst"],
+                        "libraries": ["-lX11", "-lXtst"],
                     }
                 ],
             ],
