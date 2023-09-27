@@ -137,7 +137,7 @@ if (platform === "win32") {
 } else if (platform === "linux") {
     KEYS = require("./data/x11-keys");
 } else {
-    KEYS = { ...require("./data/osx-keys"), ...require("./data/osx-modifiers") }
+    KEYS = {...require("./data/osx-keys"), ...require("./data/osx-modifiers")}
 }
 
 const KEY_NAMES = [
@@ -158,7 +158,7 @@ const KEY_NAMES = [
 ];
 
 function linear(dx, dy, steps) {
-    const stepVector = { x: dx / steps, y: dy / steps };
+    const stepVector = {x: dx / steps, y: dy / steps};
     return function (_step) {
         API.mouse.moveRel(stepVector.x, stepVector.y);
     };
@@ -380,7 +380,11 @@ const API = {
             return this.size.width;
         },
         get height() {
-            return this.height.height;
+            return this.size.height;
+        },
+        get middle() {
+            const s = this.size;
+            return {x: Math.floor(s.x / 2), y: Math.floor(s.y / 2)};
         },
         includes(x, y) {
             eInt32(x, "x");

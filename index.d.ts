@@ -336,6 +336,11 @@ type PUBLIC_API = {
         get height(): number;
         set width(v: never);
         set height(v: never);
+        get center(): {
+            x: number;
+            y: number;
+        };
+        set center(v: never);
         includes(x: number, y: number): boolean;
         contains(x: number, y: number): boolean;
     },
