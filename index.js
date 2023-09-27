@@ -384,7 +384,7 @@ const API = {
         },
         get center() {
             const s = this.size;
-            return {x: Math.floor(s.width / 2), y: Math.floor(s.width / 2)};
+            return {x: Math.floor(s.width / 2), y: Math.floor(s.height / 2)};
         },
         includes(x, y) {
             eInt32(x, "x");
