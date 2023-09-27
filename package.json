@@ -9,6 +9,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "jsautogui": "^0.0.1-dev",
     "node-gyp": "^9.4.0"
   },
   "types": "./index.d.ts"
