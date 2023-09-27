@@ -6,13 +6,13 @@
 #include <cstdio>
 #include <thread>
 #include <vector>
-#include "main.h"
+#include "../main.h"
 
-#define GetDisplay(display, ret)                \
-    Display *(display) = XOpenDisplay(nullptr); \
-    if ((display) == nullptr)                   \
-    {                                           \
-        return (ret);                           \
+#define GetDisplay(ret)                       \
+    Display *display = XOpenDisplay(nullptr); \
+    if (display == nullptr)                   \
+    {                                         \
+        return (ret);                         \
     }
 
 Point f_get_screen_size()
@@ -61,7 +61,7 @@ bool f_set_cursor_position(int x, int y)
 }
 
 #define IsDownMacro(check)                                                                                                          \
-    GetDisplay(display, false);                                                                                                     \
+    GetDisplay(false);                                                                                                              \
     Window root = DefaultRootWindow(display);                                                                                       \
     XEvent event;                                                                                                                   \
     XGrabPointer(display, root, False, ButtonPressMask | ButtonReleaseMask, GrabModeAsync, GrabModeAsync, None, None, CurrentTime); \
@@ -92,7 +92,7 @@ bool f_is_mouse_middle_down()
 }
 
 #define ClickMacro(btn)                                       \
-    GetDisplay(display, false);                               \
+    GetDisplay(false);                                        \
     XTestFakeButtonEvent(display, (btn), True, CurrentTime);  \
     XFlush(display);                                          \
     usleep(10000); /* Required for linux */                   \
@@ -117,7 +117,7 @@ bool f_click_middle()
 }
 
 #define DownUpMacro(btn, type)                                 \
-    GetDisplay(display, false);                                \
+    GetDisplay(false);                                         \
     XTestFakeButtonEvent(display, (btn), (type), CurrentTime); \
     XFlush(display);                                           \
     XCloseDisplay(display);                                    \
@@ -160,8 +160,7 @@ bool f_is_mouse_swapped()
 
 bool f_mouse_scroll(int x, int y)
 {
-    GetDisplay(display, false);
-    Window root = DefaultRootWindow(display);
+    GetDisplay(false);
     // TODO: horizontal scrolling
     for (int i = 0; i < y; ++i)
     {
@@ -172,38 +171,39 @@ bool f_mouse_scroll(int x, int y)
         XFlush(display);
     }
     XCloseDisplay(display);
+    return true;
 }
 
 bool f_press_key(bool is_ascii, int got)
 {
-    GetDisplay(display, false);
-    Window root = DefaultRootWindow(display);
+    GetDisplay(false);
     KeyCode keyCode = is_ascii ? XKeysymToKeycode(display, got) : got;
     XTestFakeKeyEvent(display, keyCode, True, CurrentTime);
     XFlush(display);
     XTestFakeKeyEvent(display, keyCode, False, CurrentTime);
     XFlush(display);
     XCloseDisplay(display);
+    return true;
 }
 
 bool f_key_down(bool is_ascii, int got)
 {
-    GetDisplay(display, false);
-    Window root = DefaultRootWindow(display);
+    GetDisplay(false);
     KeyCode keyCode = is_ascii ? XKeysymToKeycode(display, got) : got;
     XTestFakeKeyEvent(display, keyCode, True, CurrentTime);
     XFlush(display);
     XCloseDisplay(display);
+    return true;
 }
 
 bool f_key_up(bool is_ascii, int got)
 {
-    GetDisplay(display, false);
-    Window root = DefaultRootWindow(display);
+    GetDisplay(false);
     KeyCode keyCode = is_ascii ? XKeysymToKeycode(display, got) : got;
     XTestFakeKeyEvent(display, keyCode, False, CurrentTime);
     XFlush(display);
     XCloseDisplay(display);
+    return true;
 }
 
 int f_show_message_box(char *textBuf, char *captionBuf, int flags)

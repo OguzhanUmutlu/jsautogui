@@ -334,6 +334,8 @@ type PUBLIC_API = {
         };
         get width(): number;
         get height(): number;
+        set width(v: never);
+        set height(v: never);
         includes(x: number, y: number): boolean;
         contains(x: number, y: number): boolean;
     },
