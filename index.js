@@ -382,7 +382,7 @@ const API = {
         get height() {
             return this.size.height;
         },
-        get middle() {
+        get center() {
             const s = this.size;
             return {x: Math.floor(s.x / 2), y: Math.floor(s.y / 2)};
         },
