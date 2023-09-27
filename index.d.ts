@@ -344,4 +344,4 @@ type PUBLIC_API = {
 };
 
 declare const __: PUBLIC_API;
-export default __;
+export = __;

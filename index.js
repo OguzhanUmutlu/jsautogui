@@ -1,5 +1,7 @@
 /*** @type {Record<string, Function>} */
 const native = require("./build/Release/jsautogui");
+const os = require("os");
+const platform = os.platform();
 
 const eType = (a, t, n) => {
     if (typeof a !== t) {
@@ -100,36 +102,43 @@ const MESSAGE_BOX = {
     }
 };
 
-const WIN_KEYS = require("./data/win-keys");
-const { clear } = require("./data/win-keys");
-const WIN_MODIFIERS = {
-    "!": WIN_KEYS.shift,
-    "@": WIN_KEYS.altright,
-    "#": WIN_KEYS.altright,
-    "$": WIN_KEYS.altright,
-    "%": WIN_KEYS.shift,
-    "^": WIN_KEYS.shift,
-    "&": WIN_KEYS.shift,
-    "(": WIN_KEYS.shift,
-    ")": WIN_KEYS.shift,
-    "_": WIN_KEYS.shift,
-    "=": WIN_KEYS.shift,
-    "{": WIN_KEYS.altright,
-    "}": WIN_KEYS.altright,
-    "[": WIN_KEYS.altright,
-    "]": WIN_KEYS.altright,
-    "|": WIN_KEYS.altright,
-    "\\": WIN_KEYS.altright,
-    ":": WIN_KEYS.shift,
-    ";": WIN_KEYS.shift,
-    "\"": WIN_KEYS.shift,
-    "<": WIN_KEYS.shift,
-    ">": WIN_KEYS.shift,
-    "?": WIN_KEYS.shift,
-    "/": WIN_KEYS.altright,
-    "~": WIN_KEYS.altright,
-    "`": WIN_KEYS.altright
-};
+let KEYS = {};
+if (platform === "win32") {
+    const WIN_KEYS = require("./data/win-keys");
+    KEYS = {
+        ...WIN_KEYS,
+        "!": WIN_KEYS.shift,
+        "@": WIN_KEYS.altright,
+        "#": WIN_KEYS.altright,
+        "$": WIN_KEYS.altright,
+        "%": WIN_KEYS.shift,
+        "^": WIN_KEYS.shift,
+        "&": WIN_KEYS.shift,
+        "(": WIN_KEYS.shift,
+        ")": WIN_KEYS.shift,
+        "_": WIN_KEYS.shift,
+        "=": WIN_KEYS.shift,
+        "{": WIN_KEYS.altright,
+        "}": WIN_KEYS.altright,
+        "[": WIN_KEYS.altright,
+        "]": WIN_KEYS.altright,
+        "|": WIN_KEYS.altright,
+        "\\": WIN_KEYS.altright,
+        ":": WIN_KEYS.shift,
+        ";": WIN_KEYS.shift,
+        "\"": WIN_KEYS.shift,
+        "<": WIN_KEYS.shift,
+        ">": WIN_KEYS.shift,
+        "?": WIN_KEYS.shift,
+        "/": WIN_KEYS.altright,
+        "~": WIN_KEYS.altright,
+        "`": WIN_KEYS.altright
+    };
+} else if (platform === "linux") {
+    KEYS = require("./data/x11-keys");
+} else {
+    KEYS = { ...require("./data/osx-keys"), ...require("./data/osx-modifiers") }
+}
 
 const KEY_NAMES = [
     "\t", "\n", "\r", " ", "!", "\"", "#", "$", "%", "&", "'", "(", ")", "*", "+", ",", "-", ".", "/", "0", "1", "2",
@@ -180,8 +189,6 @@ class PromptBox {
 const API = {
     __native: native,
     MESSAGE_BOX,
-    WIN_KEYS,
-    WIN_MODIFIERS,
     KEY_NAMES,
     get FAIL_SAFE() {
         return failSafe;
@@ -213,7 +220,7 @@ const API = {
             this.setPosition(v);
         },
         get x() {
-            return this.position().x;
+            return this.position.x;
         },
         set x(v) {
             eInt32(v, "mouse.position.x");
@@ -221,7 +228,7 @@ const API = {
             if (!native.set_mouse_x(v)) return perm("set the x position of the mouse");
         },
         get y() {
-            return this.position().y;
+            return this.position.y;
         },
         set y(v) {
             eInt32(v, "mouse.position.y");
@@ -336,12 +343,13 @@ const API = {
     },
     keyboard: {
         __native(key, fn) {
-            if (WIN_KEYS[key]) native[fn](false, WIN_KEYS[key]);
+            if (KEYS[key]) native[fn](false, KEYS[key]);
             else {
-                const modifier = WIN_MODIFIERS[key];
+                /*const modifier = WIN_MODIFIERS[key];
                 if (modifier) native.key_down(false, modifier) || perm("press a key of keyboard");
                 native[fn](true, key.charCodeAt(0));
-                if (modifier) native.key_up(false, modifier) || perm("press a key of keyboard");
+                if (modifier) native.key_up(false, modifier) || perm("press a key of keyboard");*/
+                native[fn](true, key.charCodeAt(0));
                 // todo: fix modifiers
             }
         },
@@ -395,3 +403,4 @@ const API = {
 };
 
 module.exports = API;
+API.default = API;
