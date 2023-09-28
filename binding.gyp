@@ -10,13 +10,19 @@
             ],
             "conditions": [
                 ["OS=='win'", {"sources": ["src/system/winfn.cpp"]}],
-                ["OS=='mac'", {"sources": ["src/system/osx.cpp"]}],
+                [
+                    "OS=='mac'",
+                    {
+                        "sources": ["src/system/osx.cpp"],
+                        "libraries": ["-framework CoreGraphics"],
+                    },
+                ],
                 [
                     "OS!='win' and OS!='mac'",
                     {
                         "sources": ["src/system/x11fn.cpp"],
                         "libraries": ["-lX11", "-lXtst"],
-                    }
+                    },
                 ],
             ],
         }

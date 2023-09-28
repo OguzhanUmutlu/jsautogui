@@ -1,57 +1,40 @@
-#include <Windows.h>
+#include <CoreGraphics/CoreGraphics.h>
 #include <iostream>
 #include <thread>
 #include <vector>
 #include "../main.h"
 
-#define IDD_CUSTOM_DIALOG 101
-#define IDC_EDIT 102
-
-#define INPUT_SEND(input)                           \
-    if (SendInput(1, &(input), sizeof(INPUT)) != 1) \
-    {                                               \
-        return false;                               \
-    }
-
-LPCWSTR to_lpcwstr(char *text)
-{
-    int textLen = strlen(text) + 1;
-
-    int textWLen = MultiByteToWideChar(CP_UTF8, 0, text, textLen, nullptr, 0);
-
-    wchar_t *textW = new wchar_t[textWLen];
-
-    MultiByteToWideChar(CP_UTF8, 0, text, textLen, textW, textWLen);
-
-    return textW; // WARNING: DO NOT FORGET TO delete[] lpcwstr;
-}
-
-LPWSTR to_lpwstr(char *buffer)
-{
-    int len = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, NULL, 0);
-    LPWSTR lpwstr = new WCHAR[len];
-    MultiByteToWideChar(CP_UTF8, 0, buffer, -1, lpwstr, len);
-    return lpwstr; // WARNING: DO NOT FORGET TO delete[] lpwstr;
-}
+// in progress
 
 Point f_get_screen_size()
 {
-    return Point(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
+    CGDirectDisplayID displayID = kCGDirectMainDisplay;
+    CGRect bounds = CGDisplayBounds(displayID); // main screen
+    return Point(static_cast<int>(bounds.size.width), static_cast<int>(bounds.size.height));
 }
 
 Point f_get_cursor_position()
 {
-    POINT point;
-    if (!GetCursorPos(&point))
-    {
-        return Point(-1, -1);
-    }
-    return Point(point.x, point.y);
+    CGEventRef event = CGEventCreate(NULL);
+    CGPoint cursor = CGEventGetLocation(event);
+    CFRelease(event);
+    return Point(cursor.x, cursor.y);
 }
 
 bool f_set_cursor_position(int x, int y)
 {
-    return SetCursorPos(x, y);
+    // Create a mouse event
+    CGEventRef moveEvent = CGEventCreateMouseEvent(
+        NULL, kCGEventMouseMoved,
+        CGPointMake(static_cast<CGFloat>(x), static_cast<CGFloat>(y)),
+        kCGEventLeftMouseDown
+    );
+
+    // Post the event to set the cursor position
+    CGEventPost(kCGHIDEventTap, moveEvent);
+    
+    // Release the event
+    CFRelease(moveEvent);
 }
 
 bool f_is_mouse_left_down()
@@ -184,9 +167,14 @@ bool f_mouse_scroll(int x, int y)
 
 bool f_press_key(bool is_ascii, int got)
 {
+    if (is_ascii)
+    {
+        got = VkKeyScanA(static_cast<CHAR>(got));
+    }
+
     INPUT input;
     input.type = INPUT_KEYBOARD;
-    input.ki.wVk = is_ascii ? VkKeyScanA(static_cast<CHAR>(got)) : got;
+    input.ki.wVk = got;
     input.ki.dwFlags = 0;
     INPUT_SEND(input);
 
@@ -197,9 +185,14 @@ bool f_press_key(bool is_ascii, int got)
 
 bool f_key_down(bool is_ascii, int got)
 {
+    if (is_ascii)
+    {
+        got = VkKeyScanA(static_cast<CHAR>(got));
+    }
+
     INPUT input;
     input.type = INPUT_KEYBOARD;
-    input.ki.wVk = is_ascii ? VkKeyScanA(static_cast<CHAR>(got)) : got;
+    input.ki.wVk = got;
     input.ki.dwFlags = 0;
     INPUT_SEND(input);
     return true;
@@ -207,9 +200,14 @@ bool f_key_down(bool is_ascii, int got)
 
 bool f_key_up(bool is_ascii, int got)
 {
+    if (is_ascii)
+    {
+        got = VkKeyScanA(static_cast<CHAR>(got));
+    }
+
     INPUT input;
     input.type = INPUT_KEYBOARD;
-    input.ki.wVk = is_ascii ? VkKeyScanA(static_cast<CHAR>(got)) : got;
+    input.ki.wVk = got;
     input.ki.dwFlags = KEYEVENTF_KEYUP;
     INPUT_SEND(input);
     return true;
@@ -217,49 +215,10 @@ bool f_key_up(bool is_ascii, int got)
 
 int f_show_message_box(char *textBuf, char *captionBuf, int flags)
 {
-    LPCWSTR textW = to_lpcwstr(textBuf);
-    LPCWSTR captionW = to_lpcwstr(captionBuf);
-
-    int res = MessageBoxW(NULL, textW, captionW, flags);
-
-    delete[] textW;
-    delete[] captionW;
-    return res;
-}
-
-INT_PTR CALLBACK CustomMessageBoxProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        switch (LOWORD(wParam))
-        {
-        case IDOK:
-        {
-            char buffer[256];
-            LPWSTR lpwstr = to_lpwstr(buffer);
-            LPCWSTR lpcwstr = to_lpcwstr(buffer);
-            GetDlgItemTextW(hwndDlg, IDC_EDIT, lpwstr, sizeof(buffer));
-            MessageBoxW(hwndDlg, lpcwstr, L"User Input", MB_OK | MB_ICONINFORMATION);
-            delete[] lpwstr;
-            delete[] lpcwstr;
-            EndDialog(hwndDlg, 0);
-        }
-            return TRUE;
-
-        case IDCANCEL:
-            EndDialog(hwndDlg, 0);
-            return TRUE;
-        }
-        break;
-    }
-    return FALSE;
+    return 0;
 }
 
 int f_show_prompt()
 {
-    return DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CUSTOM_DIALOG), NULL, CustomMessageBoxProc);
+    return 0;
 }

@@ -1,4 +1,3 @@
-#include <node_api.h>
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/extensions/XTest.h>
@@ -25,8 +24,7 @@ Point f_get_screen_size()
     int screen_num = DefaultScreen(display);
 
     XCloseDisplay(display);
-    Point p(DisplayWidth(display, screen_num), DisplayHeight(display, screen_num));
-    return p;
+    return Point(DisplayWidth(display, screen_num), DisplayHeight(display, screen_num));
 }
 
 Point f_get_cursor_position()
@@ -43,8 +41,7 @@ Point f_get_cursor_position()
                   &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
     XFlush(display);
     XCloseDisplay(display);
-    Point p(event.xbutton.x_root, event.xbutton.y_root);
-    return p;
+    return Point(event.xbutton.x_root, event.xbutton.y_root);
 }
 
 bool f_set_cursor_position(int x, int y)

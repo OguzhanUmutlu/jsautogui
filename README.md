@@ -2,6 +2,8 @@
 
 > JSAutoGUI is an npm package for node.js. Inspired by pyautogui from python. (but noticably faster and better)
 
+![](https://github.com/OguzhanUmutlu/jsautogui/blob/main/tests/code.png)
+
 # How to use?
 
 You can install the `jsautogui` to your project by typing this in your terminal:
