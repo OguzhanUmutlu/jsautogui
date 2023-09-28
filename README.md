@@ -2,6 +2,26 @@
 
 > JSAutoGUI is an npm package for node.js. Inspired by pyautogui from python. (but noticably faster and better)
 
+# How to use?
+
+You can install the `jsautogui` to your project by typing this in your terminal:
+
+```shell
+npm install jsautogui
+```
+
+After this you can start using the package by importing it:
+
+```js
+import jsautogui from "jsautogui"; // in modulejs
+// or
+const jsautogui = require("jsautogui"); // in commonjs
+```
+
+Now you can access the functionalities of jsautogui through this variable!
+
+You can see a list of all functions in here: [JSAutoGUI Wiki](https://github.com/OguzhanUmutlu/jsautogui/wiki)
+
 # How to contribute/fork/edit?
 
 To alter the C++ codes this project has you have to include some libraries.

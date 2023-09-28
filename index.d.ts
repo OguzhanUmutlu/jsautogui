@@ -294,10 +294,7 @@ type PUBLIC_API = {
         get y(): number;
         set x(v);
         set y(v);
-        setPosition(v: {
-            x: number;
-            y: number;
-        }): void;
+        setPosition(x: number, y: number): void;
         getPosition(point: true): {
             get x(): number;
             get y(): number;
@@ -310,15 +307,16 @@ type PUBLIC_API = {
             set x(v: never);
             set y(v: never);
         },
+        get isSwapped(): boolean;
         moveTo(x: number, y: number, duration?: number, tween?: Function, deltaTime?: number): void;
         moveRel(dx: number, dy: number, duration?: number, tween?: Function, deltaTime?: number): void;
         dragTo(x: number, y: number, button?: Buttons[number], duration?: number, tween?: Function, deltaTime?: number): void;
-        dragRel(x: number, y: number, button?: Buttons[number], duration?: number, tween?: Function, deltaTime?: number): void;
-        get isSwapped(): boolean;
+        dragRel(dx: number, dy: number, button?: Buttons[number], duration?: number, tween?: Function, deltaTime?: number): void;
         down(button?: Buttons[number]): void;
         up(button?: Buttons[number]): void;
         click(button?: Buttons[number]): void;
         scroll(x?: number, y?: number): void;
+        LinearTween: Function;
     },
     keyboard: {
         press(...keys: KEY_NAMES[]): void;
@@ -332,6 +330,7 @@ type PUBLIC_API = {
             width: number;
             height: number;
         };
+        set size(v: never);
         get width(): number;
         get height(): number;
         set width(v: never);

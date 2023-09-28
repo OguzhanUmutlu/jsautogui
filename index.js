@@ -213,11 +213,12 @@ const API = {
         native.set_pause(v);
     },
     mouse: {
+        LinearTween: linear,
         get position() {
             return this.getPosition();
         },
         set position(v) {
-            this.setPosition(v);
+            this.setPosition(v.x, v.y);
         },
         get x() {
             return this.position.x;
@@ -252,27 +253,26 @@ const API = {
             });
             return obj;
         },
-        setPosition(pos) {
-            eType(pos, "object", "position");
-            eInt32(pos.x, "mouse.position.x");
-            eInt32(pos.y, "mouse.position.y");
-            eSize(pos.x, 0, INT32_MAX, "mouse.position.x");
-            eSize(pos.y, 0, INT32_MAX, "mouse.position.y");
-            if (!native.set_mouse_pos(pos.x, pos.y)) return perm("set the position of the mouse");
+        setPosition(x, y) {
+            eInt32(x, "mouse.position.x");
+            eInt32(y, "mouse.position.y");
+            eSize(x, 0, INT32_MAX, "mouse.position.x");
+            eSize(y, 0, INT32_MAX, "mouse.position.y");
+            if (!native.set_mouse_pos(x, y)) return perm("set the position of the mouse");
         },
-        moveTo(x, y, duration = 0, tween = linear, deltaTime = 100) {
+        moveTo(x, y, duration = 0, tween = linear, deltaTime = 50) {
             eInt32(x, "x");
             eInt32(y, "y");
             eSize(x, 0, INT32_MAX, "x");
             eSize(y, 0, INT32_MAX, "y");
             eInt32(duration, "duration");
-            eInt32(deltaTime, "deltaTime")
+            eInt32(deltaTime, "deltaTime");
             if (duration === 0) return native.set_mouse_pos(x, y);
             eType(tween, "function");
             const start = native.get_mouse_pos();
             return this.moveRel(x - start.x, y - start.y, duration, tween, deltaTime);
         },
-        moveRel(dx, dy, duration = 0, tween = linear, deltaTime = 100) {
+        moveRel(dx, dy, duration = 0, tween = linear, deltaTime = 50) {
             eInt32(dx, "x");
             eInt32(dy, "y");
             eInt32(duration, "duration");
@@ -296,15 +296,15 @@ const API = {
                 }, deltaTime);
             });
         },
-        dragTo(x, y, button = "primary", duration = 0, tween = linear, deltaTime = 100) {
+        dragTo(x, y, button = "primary", duration = 0, tween = linear, deltaTime = 50) {
             this.down(button);
-            const r = this.moveTo(x, y, duration, tween);
+            const r = this.moveTo(x, y, duration, tween, deltaTime);
             if (r instanceof Promise) return r.then(() => this.up(button));
             this.up(button);
         },
-        dragRel(x, y, button = "primary", duration = 0, tween = linear, deltaTime = 100) {
+        dragRel(x, y, button = "primary", duration = 0, tween = linear, deltaTime = 50) {
             this.down(button);
-            const r = this.moveRel(x, y, duration, tween);
+            const r = this.moveRel(x, y, duration, tween, deltaTime);
             if (r instanceof Promise) return r.then(() => this.up(button));
             this.up(button);
         },
