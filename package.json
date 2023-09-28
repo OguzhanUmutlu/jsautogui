@@ -1,6 +1,6 @@
 {
   "name": "jsautogui",
-  "version": "0.0.17-dev",
+  "version": "0.0.18-dev",
   "description": "JSAutoGUI is an npm package for node.js. Inspired by pyautogui from python. (but noticably faster and better)",
   "main": "index.js",
   "keywords": [],

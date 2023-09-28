@@ -20,7 +20,7 @@ const jsautogui = require("jsautogui"); // in commonjs
 
 Now you can access the functionalities of jsautogui through this variable!
 
-You can see a list of all functions in here: [JSAutoGUI Wiki](https://github.com/OguzhanUmutlu/jsautogui/wiki)
+### You can see a list of all functions in here: [JSAutoGUI Wiki](https://github.com/OguzhanUmutlu/jsautogui/wiki)
 
 # How to contribute/fork/edit?
 
