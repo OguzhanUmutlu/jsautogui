@@ -1,4 +1,5 @@
 #include <CoreGraphics/CoreGraphics.h>
+#include <ApplicationServices/ApplicationServices.h>
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -23,193 +24,170 @@ Point f_get_cursor_position()
 
 bool f_set_cursor_position(int x, int y)
 {
-    // Create a mouse event
     CGEventRef moveEvent = CGEventCreateMouseEvent(
         NULL, kCGEventMouseMoved,
         CGPointMake(static_cast<CGFloat>(x), static_cast<CGFloat>(y)),
-        kCGEventLeftMouseDown
-    );
-
-    // Post the event to set the cursor position
+        kCGEventLeftMouseDown);
     CGEventPost(kCGHIDEventTap, moveEvent);
-    
-    // Release the event
     CFRelease(moveEvent);
 }
 
 bool f_is_mouse_left_down()
 {
-    return GetAsyncKeyState(VK_LBUTTON) & 0x8000;
+    CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+    return (flags & kCGEventLeftMouseDown) != 0;
 }
 
 bool f_is_mouse_right_down()
 {
-    return GetAsyncKeyState(VK_RBUTTON) & 0x8000;
+    CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+    return (flags & kCGEventRightMouseDown) != 0;
 }
 
 bool f_is_mouse_middle_down()
 {
-    return GetAsyncKeyState(VK_MBUTTON) & 0x8000;
+    CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+    return (flags & kCGEventOtherMouseDown) != 0;
 }
+
+#define ClickMacro(down, up)                        \
+    CGEventRef event = CGEventCreate(NULL);         \
+    CGPoint cursor = CGEventGetLocation(event);     \
+    CFRelease(event);                               \
+    CGEventRef mouseDown = CGEventCreateMouseEvent( \
+        NULL, (down),                               \
+        cursor,                                     \
+        kCGHIDEventTap);                            \
+    CGEventRef mouseUp = CGEventCreateMouseEvent(   \
+        NULL, (up),                                 \
+        cursor,                                     \
+        kCGHIDEventTap);                            \
+    CGEventPost(kCGHIDEventTap, mouseDown);         \
+    CGEventPost(kCGHIDEventTap, mouseUp);           \
+    CFRelease(mouseDown);                           \
+    CFRelease(mouseUp);                             \
+    return true;
 
 bool f_click_left()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN + MOUSEEVENTF_LEFTUP;
-    INPUT_SEND(input);
-    return true;
+    ClickMacro(kCGEventLeftMouseDown, kCGEventLeftMouseUp);
 }
 
 bool f_click_right()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN + MOUSEEVENTF_RIGHTUP;
-    INPUT_SEND(input);
-    return true;
+    ClickMacro(kCGEventRightMouseDown, kCGEventRightMouseUp);
 }
 
 bool f_click_middle()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN + MOUSEEVENTF_MIDDLEUP;
-    INPUT_SEND(input);
-    return true;
+    ClickMacro(kCGEventOtherMouseDown, kCGEventOtherMouseUp);
 }
+
+#define Mouse1Macro(t)                          \
+    CGEventRef event = CGEventCreate(NULL);     \
+    CGPoint cursor = CGEventGetLocation(event); \
+    CFRelease(event);                           \
+    CGEventRef cl = CGEventCreateMouseEvent(    \
+        NULL, (t),                              \
+        cursor,                                 \
+        kCGHIDEventTap);                        \
+    CGEventPost(kCGHIDEventTap, cl);            \
+    CFRelease(cl);                              \
+    return true;
 
 bool f_mouse_left_down()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-    INPUT_SEND(input);
-    return true;
+    Mouse1Macro(kCGEventLeftMouseDown);
 }
 
 bool f_mouse_right_down()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-    INPUT_SEND(input);
-    return true;
+    Mouse1Macro(kCGEventRightMouseDown);
 }
 
 bool f_mouse_middle_down()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-    INPUT_SEND(input);
-    return true;
+    Mouse1Macro(kCGEventOtherMouseDown);
 }
 
 bool f_mouse_left_up()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    INPUT_SEND(input);
-    return true;
+    Mouse1Macro(kCGEventLeftMouseUp);
 }
 
 bool f_mouse_right_up()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-    INPUT_SEND(input);
-    return true;
+    Mouse1Macro(kCGEventRightMouseUp);
 }
 
 bool f_mouse_middle_up()
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-    INPUT_SEND(input);
-    return true;
+    Mouse1Macro(kCGEventOtherMouseUp);
 }
 
 bool f_is_mouse_swapped()
 {
-    return GetSystemMetrics(23) != 0;
+    CFDictionaryRef mousePrefs = CGEventSourceCopyProperties(kCGEventSourceStateHIDSystemState);
+    if (mousePrefs != nullptr)
+    {
+        CFBooleanRef isSwappedRef = static_cast<CFBooleanRef>(CFDictionaryGetValue(mousePrefs, kIOHIDMouseKeysOnKey));
+        if (isSwappedRef != nullptr)
+        {
+            bool isSwapped = CFBooleanGetValue(isSwappedRef);
+            CFRelease(mousePrefs);
+            return isSwapped;
+        }
+        CFRelease(mousePrefs);
+    }
+    return false;
 }
 
 bool f_mouse_scroll(int x, int y)
 {
-    INPUT input;
-    input.type = INPUT_MOUSE;
-
-    if (x != 0)
-    {
-        input.mi.mouseData = x;
-        input.mi.dwFlags = MOUSEEVENTF_HWHEEL;
-        INPUT_SEND(input);
-    }
-
-    if (y != 0)
-    {
-        input.mi.mouseData = y;
-        input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-        INPUT_SEND(input);
-    }
-
-    if (x != 0 || y != 0)
-    {
-        input.mi.dwFlags = 0;
-        INPUT_SEND(input);
-    }
+    int scrollXSteps = x;
+    int scrollYSteps = y;
+    CGEventRef scrollXEvent = CGEventCreateScrollWheelEvent(
+        NULL, kCGScrollEventUnitPixel, 2, scrollXSteps);
+    CGEventRef scrollYEvent = CGEventCreateScrollWheelEvent(
+        NULL, kCGScrollEventUnitPixel, 1, scrollYSteps);
+    CGEventPost(kCGHIDEventTap, scrollXEvent);
+    CGEventPost(kCGHIDEventTap, scrollYEvent);
+    CFRelease(scrollXEvent);
+    CFRelease(scrollYEvent);
     return true;
 }
 
 bool f_press_key(bool is_ascii, int got)
 {
-    if (is_ascii)
-    {
-        got = VkKeyScanA(static_cast<CHAR>(got));
-    }
+    CGEventSourceRef eventSource = kCGEventSourceStateHIDSystemState;
+    CGEventRef keyDownEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, true);
+    CGEventKeyboardSetUnicodeString(keyDownEvent, 1, &got);
+    CGEventPost(kCGHIDEventTap, keyDownEvent);
+    CFRelease(keyDownEvent);
 
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = got;
-    input.ki.dwFlags = 0;
-    INPUT_SEND(input);
-
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
-    INPUT_SEND(input);
+    CGEventRef keyUpEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, false);
+    CGEventKeyboardSetUnicodeString(keyUpEvent, 1, &got);
+    CGEventPost(kCGHIDEventTap, keyUpEvent);
+    CFRelease(keyUpEvent);
     return true;
 }
 
 bool f_key_down(bool is_ascii, int got)
 {
-    if (is_ascii)
-    {
-        got = VkKeyScanA(static_cast<CHAR>(got));
-    }
-
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = got;
-    input.ki.dwFlags = 0;
-    INPUT_SEND(input);
-    return true;
+    CGEventSourceRef eventSource = kCGEventSourceStateHIDSystemState;
+    CGEventRef keyDownEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, true);
+    CGEventKeyboardSetUnicodeString(keyDownEvent, 1, &got);
+    CGEventPost(kCGHIDEventTap, keyDownEvent);
+    CFRelease(keyDownEvent);
 }
 
 bool f_key_up(bool is_ascii, int got)
 {
-    if (is_ascii)
-    {
-        got = VkKeyScanA(static_cast<CHAR>(got));
-    }
-
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = got;
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
-    INPUT_SEND(input);
+    CGEventSourceRef eventSource = kCGHIDEventSourceStateHIDSystemState;
+    CGEventRef keyUpEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, false);
+    CGEventKeyboardSetUnicodeString(keyUpEvent, 1, &got);
+    CGEventPost(kCGHIDEventTap, keyUpEvent);
+    CFRelease(keyUpEvent);
     return true;
 }
 
