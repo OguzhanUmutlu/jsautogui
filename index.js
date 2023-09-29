@@ -137,7 +137,7 @@ if (platform === "win32") {
 } else if (platform === "linux") {
     KEYS = require("./data/x11-keys");
 } else {
-    KEYS = {...require("./data/osx-keys"), ...require("./data/osx-modifiers")}
+    // KEYS = {...require("./data/osx-keys"), ...require("./data/osx-modifiers")}
 }
 
 const KEY_NAMES = [
