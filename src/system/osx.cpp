@@ -1,51 +1,49 @@
+#ifdef __APPLE__
 #include <CoreGraphics/CoreGraphics.h>
 #include <ApplicationServices/ApplicationServices.h>
 #include <iostream>
 #include <thread>
 #include <vector>
+
+#include "utils.h"
 #include "../main.h"
 
 // in progress
 
-Point f_get_screen_size()
-{
+optional<Point> f_get_screen_size() {
     CGDirectDisplayID displayID = kCGDirectMainDisplay;
     CGRect bounds = CGDisplayBounds(displayID); // main screen
-    return Point(static_cast<int>(bounds.size.width), static_cast<int>(bounds.size.height));
+    return make_optional(Point(static_cast<int>(bounds.size.width), static_cast<int>(bounds.size.height)));
 }
 
-Point f_get_cursor_position()
-{
+optional<Point> f_get_cursor_position() {
     CGEventRef event = CGEventCreate(NULL);
     CGPoint cursor = CGEventGetLocation(event);
     CFRelease(event);
-    return Point(cursor.x, cursor.y);
+    return make_optional(Point(cursor.x, cursor.y));
 }
 
-bool f_set_cursor_position(int x, int y)
-{
+bool f_set_cursor_position(int x, int y) {
     CGEventRef moveEvent = CGEventCreateMouseEvent(
         NULL, kCGEventMouseMoved,
         CGPointMake(static_cast<CGFloat>(x), static_cast<CGFloat>(y)),
         kCGEventLeftMouseDown);
     CGEventPost(kCGHIDEventTap, moveEvent);
     CFRelease(moveEvent);
+    return true;
 }
 
-bool f_is_mouse_left_down()
-{
+bool f_is_mouse_left_down() {
     CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
     return (flags & kCGEventLeftMouseDown) != 0;
 }
 
-bool f_is_mouse_right_down()
-{
+bool f_is_mouse_right_down() {
     CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
     return (flags & kCGEventRightMouseDown) != 0;
 }
 
-bool f_is_mouse_middle_down()
-{
+bool f_is_mouse_middle_down() {
     CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
     return (flags & kCGEventOtherMouseDown) != 0;
 }
@@ -68,18 +66,15 @@ bool f_is_mouse_middle_down()
     CFRelease(mouseUp);                             \
     return true;
 
-bool f_click_left()
-{
+bool f_click_left() {
     ClickMacro(kCGEventLeftMouseDown, kCGEventLeftMouseUp);
 }
 
-bool f_click_right()
-{
+bool f_click_right() {
     ClickMacro(kCGEventRightMouseDown, kCGEventRightMouseUp);
 }
 
-bool f_click_middle()
-{
+bool f_click_middle() {
     ClickMacro(kCGEventOtherMouseDown, kCGEventOtherMouseUp);
 }
 
@@ -95,44 +90,35 @@ bool f_click_middle()
     CFRelease(cl);                              \
     return true;
 
-bool f_mouse_left_down()
-{
+bool f_mouse_left_down() {
     Mouse1Macro(kCGEventLeftMouseDown);
 }
 
-bool f_mouse_right_down()
-{
+bool f_mouse_right_down() {
     Mouse1Macro(kCGEventRightMouseDown);
 }
 
-bool f_mouse_middle_down()
-{
+bool f_mouse_middle_down() {
     Mouse1Macro(kCGEventOtherMouseDown);
 }
 
-bool f_mouse_left_up()
-{
+bool f_mouse_left_up() {
     Mouse1Macro(kCGEventLeftMouseUp);
 }
 
-bool f_mouse_right_up()
-{
+bool f_mouse_right_up() {
     Mouse1Macro(kCGEventRightMouseUp);
 }
 
-bool f_mouse_middle_up()
-{
+bool f_mouse_middle_up() {
     Mouse1Macro(kCGEventOtherMouseUp);
 }
 
-bool f_is_mouse_swapped()
-{
+bool f_is_mouse_swapped() {
     CFDictionaryRef mousePrefs = CGEventSourceCopyProperties(kCGEventSourceStateHIDSystemState);
-    if (mousePrefs != nullptr)
-    {
+    if (mousePrefs != nullptr) {
         CFBooleanRef isSwappedRef = static_cast<CFBooleanRef>(CFDictionaryGetValue(mousePrefs, kIOHIDMouseKeysOnKey));
-        if (isSwappedRef != nullptr)
-        {
+        if (isSwappedRef != nullptr) {
             bool isSwapped = CFBooleanGetValue(isSwappedRef);
             CFRelease(mousePrefs);
             return isSwapped;
@@ -142,10 +128,9 @@ bool f_is_mouse_swapped()
     return false;
 }
 
-bool f_mouse_scroll(int x, int y)
-{
-    int scrollXSteps = x;
-    int scrollYSteps = y;
+bool f_mouse_scroll(unsigned long x, unsigned long y) {
+    auto scrollXSteps = x;
+    auto scrollYSteps = y;
     CGEventRef scrollXEvent = CGEventCreateScrollWheelEvent(
         NULL, kCGScrollEventUnitPixel, 2, scrollXSteps);
     CGEventRef scrollYEvent = CGEventCreateScrollWheelEvent(
@@ -157,46 +142,43 @@ bool f_mouse_scroll(int x, int y)
     return true;
 }
 
-bool f_press_key(bool is_ascii, int got)
-{
+bool f_press_key(bool is_ascii, int got) {
     CGEventSourceRef eventSource = kCGEventSourceStateHIDSystemState;
-    CGEventRef keyDownEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, true);
+    CGEventRef keyDownEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode) 0, true);
     CGEventKeyboardSetUnicodeString(keyDownEvent, 1, &got);
     CGEventPost(kCGHIDEventTap, keyDownEvent);
     CFRelease(keyDownEvent);
 
-    CGEventRef keyUpEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, false);
+    CGEventRef keyUpEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode) 0, false);
     CGEventKeyboardSetUnicodeString(keyUpEvent, 1, &got);
     CGEventPost(kCGHIDEventTap, keyUpEvent);
     CFRelease(keyUpEvent);
     return true;
 }
 
-bool f_key_down(bool is_ascii, int got)
-{
+bool f_key_down(bool is_ascii, int got) {
     CGEventSourceRef eventSource = kCGEventSourceStateHIDSystemState;
-    CGEventRef keyDownEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, true);
+    CGEventRef keyDownEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode) 0, true);
     CGEventKeyboardSetUnicodeString(keyDownEvent, 1, &got);
     CGEventPost(kCGHIDEventTap, keyDownEvent);
     CFRelease(keyDownEvent);
 }
 
-bool f_key_up(bool is_ascii, int got)
-{
+bool f_key_up(bool is_ascii, int got) {
     CGEventSourceRef eventSource = kCGHIDEventSourceStateHIDSystemState;
-    CGEventRef keyUpEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode)0, false);
+    CGEventRef keyUpEvent = CGEventCreateKeyboardEvent(eventSource, (CGKeyCode) 0, false);
     CGEventKeyboardSetUnicodeString(keyUpEvent, 1, &got);
     CGEventPost(kCGHIDEventTap, keyUpEvent);
     CFRelease(keyUpEvent);
     return true;
 }
 
-int f_show_message_box(char *textBuf, char *captionBuf, int flags)
-{
+int f_show_message_box(char *textBuf, char *captionBuf, int flags) {
     return 0;
 }
 
-int f_show_prompt()
-{
+int f_show_prompt() {
     return 0;
 }
+
+#endif

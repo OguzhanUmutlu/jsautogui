@@ -1,4 +1,3 @@
-const pkg = require("../index");
+const pkg = require("../index.js");
 
-const pos = pkg.mouse.getPosition();
-pkg.mouse.click();
+pkg.keyboard.press("a");

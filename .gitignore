@@ -3,3 +3,5 @@
 build
 package-lock.json
 node_modules
+cmake-build-debug
+cmake-build-debug-wsl

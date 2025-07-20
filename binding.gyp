@@ -1,29 +1,17 @@
 {
+    "defines": [ "NAPI_VERSION=8" ],
     "targets": [
         {
             "target_name": "jsautogui",
             "sources": [
-                "src/functions.cpp",
-                "src/functions.cpp",
+                "src/system/osx.cpp",
+                "src/system/winfn.cpp",
+                "src/system/x11fn.cpp",
+                "src/node_functions.cpp",
                 "src/main.cpp",
+                "src/utils.h",
+                "src/node_functions.h",
                 "src/main.h",
-            ],
-            "conditions": [
-                ["OS=='win'", {"sources": ["src/system/winfn.cpp"]}],
-                [
-                    "OS=='mac'",
-                    {
-                        "sources": ["src/system/osx.cpp"],
-                        "libraries": ["-framework CoreGraphics"],
-                    },
-                ],
-                [
-                    "OS!='win' and OS!='mac'",
-                    {
-                        "sources": ["src/system/x11fn.cpp"],
-                        "libraries": ["-lX11", "-lXtst"],
-                    },
-                ],
             ],
         }
     ]

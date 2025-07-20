@@ -5,3 +5,10 @@ package-lock.json
 tests
 .gitignore
 .npmignore
+src
+cmake-build-debug
+cmake-build-debug-wsl
+CMakeLists.txt
+tsconfig.json
+package-lock.json
+index.ts

@@ -1,265 +1,177 @@
+#ifdef _WIN32
+#include "utils.h"
+
+using namespace std;
+
 #include <Windows.h>
 #include <iostream>
-#include <thread>
-#include <vector>
+#include <optional>
 #include "../main.h"
 
 #define IDD_CUSTOM_DIALOG 101
 #define IDC_EDIT 102
 
-#define INPUT_SEND(input)                           \
-    if (SendInput(1, &(input), sizeof(INPUT)) != 1) \
-    {                                               \
-        return false;                               \
-    }
+const WORD MODIFIERS[] = {
+    VK_ACCEPT, VK_ADD, VK_MENU, VK_LMENU, VK_RMENU, VK_APPS, VK_BACK, VK_BROWSER_BACK, VK_BROWSER_FAVORITES,
+    VK_BROWSER_FORWARD, VK_BROWSER_HOME, VK_BROWSER_REFRESH, VK_BROWSER_SEARCH, VK_BROWSER_STOP, VK_CAPITAL, VK_CLEAR,
+    VK_CONVERT, VK_CONTROL, VK_LCONTROL, VK_RCONTROL, VK_DECIMAL, VK_DELETE, VK_DELETE, VK_DIVIDE, VK_DOWN, VK_END,
+    VK_RETURN, VK_ESCAPE, VK_ESCAPE, VK_EXECUTE, VK_F1, VK_F10, VK_F11, VK_F12, VK_F13, VK_F14, VK_F15, VK_F16, VK_F17,
+    VK_F18, VK_F19, VK_F20, VK_F21, VK_F22, VK_F23, VK_F24, VK_F3, VK_F4, VK_F5, VK_F6, VK_F7, VK_F8, VK_F9, VK_FINAL,
+    VK_HANGUL, VK_HANGUL, VK_HANJA, VK_HELP, VK_HOME, VK_INSERT, VK_JUNJA, VK_KANA, VK_KANJI, VK_LAUNCH_APP1,
+    VK_LAUNCH_APP2, VK_LAUNCH_MAIL, VK_LAUNCH_MEDIA_SELECT, VK_LEFT, VK_MODECHANGE, VK_MULTIPLY, VK_MEDIA_NEXT_TRACK,
+    VK_NONCONVERT, VK_NUMPAD0, VK_NUMPAD1, VK_NUMPAD2, VK_NUMPAD3, VK_NUMPAD4, VK_NUMPAD5, VK_NUMPAD6, VK_NUMPAD7,
+    VK_NUMPAD8, VK_NUMPAD9, VK_NUMLOCK, VK_NEXT, VK_PRIOR, VK_PAUSE, VK_NEXT, VK_PRIOR, VK_MEDIA_PLAY_PAUSE,
+    VK_MEDIA_PREV_TRACK, VK_PRINT, VK_SNAPSHOT, VK_SNAPSHOT, VK_SNAPSHOT, VK_SNAPSHOT, VK_RETURN, VK_RIGHT, VK_SCROLL,
+    VK_SELECT, VK_SEPARATOR, VK_SHIFT, VK_LSHIFT, VK_RSHIFT, VK_SLEEP, VK_SPACE, VK_MEDIA_STOP, VK_SUBTRACT, VK_TAB,
+    VK_UP, VK_VOLUME_DOWN, VK_VOLUME_MUTE, VK_VOLUME_UP, VK_LWIN, VK_LWIN, VK_RWIN, VK_OEM_5, VK_LWIN, VK_MENU,
+    VK_LMENU, VK_RMENU
+};
 
-LPCWSTR to_lpcwstr(char *text)
-{
-    int textLen = strlen(text) + 1;
-
-    int textWLen = MultiByteToWideChar(CP_UTF8, 0, text, textLen, nullptr, 0);
-
-    wchar_t *textW = new wchar_t[textWLen];
-
-    MultiByteToWideChar(CP_UTF8, 0, text, textLen, textW, textWLen);
-
-    return textW; // WARNING: DO NOT FORGET TO delete[] lpcwstr;
+optional<Point> f_get_screen_size() {
+    return make_optional(Point{GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)});
 }
 
-LPWSTR to_lpwstr(char *buffer)
-{
-    int len = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, NULL, 0);
-    LPWSTR lpwstr = new WCHAR[len];
-    MultiByteToWideChar(CP_UTF8, 0, buffer, -1, lpwstr, len);
-    return lpwstr; // WARNING: DO NOT FORGET TO delete[] lpwstr;
-}
-
-Point f_get_screen_size()
-{
-    return Point(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
-}
-
-Point f_get_cursor_position()
-{
+optional<Point> f_get_cursor_position() {
     POINT point;
-    if (!GetCursorPos(&point))
-    {
-        return Point(-1, -1);
-    }
-    return Point(point.x, point.y);
+    if (!GetCursorPos(&point)) return nullopt;
+    return make_optional(Point(point.x, point.y));
 }
 
-bool f_set_cursor_position(int x, int y)
-{
+bool f_set_cursor_position(int x, int y) {
     return SetCursorPos(x, y);
 }
 
-bool f_is_mouse_left_down()
-{
+bool f_is_mouse_left_down() {
     return GetAsyncKeyState(VK_LBUTTON) & 0x8000;
 }
 
-bool f_is_mouse_right_down()
-{
+bool f_is_mouse_right_down() {
     return GetAsyncKeyState(VK_RBUTTON) & 0x8000;
 }
 
-bool f_is_mouse_middle_down()
-{
+bool f_is_mouse_middle_down() {
     return GetAsyncKeyState(VK_MBUTTON) & 0x8000;
 }
 
-bool f_click_left()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN + MOUSEEVENTF_LEFTUP;
-    INPUT_SEND(input);
-    return true;
+inline bool send_mouse_event(DWORD flags) {
+    INPUT input = {.type = INPUT_MOUSE, .mi = {.dwFlags = flags}};
+    return SendInput(1, &input, sizeof(INPUT)) == 1;
 }
 
-bool f_click_right()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN + MOUSEEVENTF_RIGHTUP;
-    INPUT_SEND(input);
-    return true;
+bool f_click_left() {
+    return send_mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP);
 }
 
-bool f_click_middle()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN + MOUSEEVENTF_MIDDLEUP;
-    INPUT_SEND(input);
-    return true;
+bool f_click_right() {
+    return send_mouse_event(MOUSEEVENTF_RIGHTDOWN | MOUSEEVENTF_RIGHTUP);
 }
 
-bool f_mouse_left_down()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN;
-    INPUT_SEND(input);
-    return true;
+bool f_click_middle() {
+    return send_mouse_event(MOUSEEVENTF_MIDDLEDOWN | MOUSEEVENTF_MIDDLEUP);
 }
 
-bool f_mouse_right_down()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTDOWN;
-    INPUT_SEND(input);
-    return true;
+bool f_mouse_left_down() {
+    return send_mouse_event(MOUSEEVENTF_LEFTDOWN);
 }
 
-bool f_mouse_middle_down()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEDOWN;
-    INPUT_SEND(input);
-    return true;
+bool f_mouse_right_down() {
+    return send_mouse_event(MOUSEEVENTF_RIGHTDOWN);
 }
 
-bool f_mouse_left_up()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_LEFTUP;
-    INPUT_SEND(input);
-    return true;
+bool f_mouse_middle_down() {
+    return send_mouse_event(MOUSEEVENTF_MIDDLEDOWN);
 }
 
-bool f_mouse_right_up()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_RIGHTUP;
-    INPUT_SEND(input);
-    return true;
+bool f_mouse_left_up() {
+    return send_mouse_event(MOUSEEVENTF_LEFTUP);
 }
 
-bool f_mouse_middle_up()
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
-    input.mi.dwFlags = MOUSEEVENTF_MIDDLEUP;
-    INPUT_SEND(input);
-    return true;
+bool f_mouse_right_up() {
+    return send_mouse_event(MOUSEEVENTF_RIGHTUP);
 }
 
-bool f_is_mouse_swapped()
-{
-    return GetSystemMetrics(23) != 0;
+bool f_mouse_middle_up() {
+    return send_mouse_event(MOUSEEVENTF_MIDDLEUP);
 }
 
-bool f_mouse_scroll(int x, int y)
-{
-    INPUT input;
-    input.type = INPUT_MOUSE;
+bool f_is_mouse_swapped() {
+    return GetSystemMetrics(SM_SWAPBUTTON) != 0;
+}
 
-    if (x != 0)
-    {
-        input.mi.mouseData = x;
-        input.mi.dwFlags = MOUSEEVENTF_HWHEEL;
-        INPUT_SEND(input);
+bool f_mouse_scroll(unsigned long x, unsigned long y) {
+    if (x == 0 && y == 0) return true;
+    INPUT inputs[2];
+    unsigned int i = 0;
+
+    if (x != 0) inputs[i++] = {.type = INPUT_MOUSE, .mi = {.mouseData = x, .dwFlags = MOUSEEVENTF_HWHEEL}};
+    if (y != 0) inputs[i++] = {.type = INPUT_MOUSE, .mi = {.mouseData = y, .dwFlags = MOUSEEVENTF_WHEEL}};
+
+    return SendInput(i, inputs, sizeof(INPUT)) == i;
+}
+
+bool f_keys_press(const KeyPressInfo *ch, size_t amount) {
+    auto inputs = new INPUT[amount * 8]; // A single key can possibly trigger 7 more
+
+    size_t j = 0;
+
+    for (size_t i = 0; i < amount; i++) {
+        switch (auto [down,up, mode, key] = ch[i]; mode) {
+            case KeyPressMode::ASCII: {
+                SHORT scan = VkKeyScanA(static_cast<char>(key));
+                if (scan == -1) continue;
+                BYTE vk = LOBYTE(scan);
+                BYTE state = HIBYTE(scan);
+                if (down) {
+                    if (state & 1) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_SHIFT}};
+                    if (state & 2) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_CONTROL}};
+                    if (state & 4) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_MENU}};
+                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = vk}};
+                }
+                if (up) {
+                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = vk, .dwFlags = KEYEVENTF_KEYUP}};
+                    constexpr DWORD uf = KEYEVENTF_KEYUP;
+                    if (state & 4) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_MENU, .dwFlags = uf}};
+                    if (state & 2) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_CONTROL, .dwFlags = uf}};
+                    if (state & 1) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_SHIFT, .dwFlags = uf}};
+                }
+                break;
+            }
+            case KeyPressMode::UNICODE: {
+                if (down) {
+                    inputs[j++] = {
+                        .type = INPUT_KEYBOARD,
+                        .ki = {.wVk = 0, .wScan = key, .dwFlags = KEYEVENTF_UNICODE}
+                    };
+                }
+                if (up) {
+                    inputs[j++] = {
+                        .type = INPUT_KEYBOARD,
+                        .ki = {.wVk = 0, .wScan = key, .dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP}
+                    };
+                }
+                break;
+            }
+            case KeyPressMode::SPECIAL: {
+                if (key >= size(MODIFIERS)) continue;
+                if (down) {
+                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = MODIFIERS[key]}};
+                }
+                if (up) {
+                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = MODIFIERS[key], .dwFlags = KEYEVENTF_KEYUP}};
+                }
+                break;
+            }
+        }
     }
 
-    if (y != 0)
-    {
-        input.mi.mouseData = y;
-        input.mi.dwFlags = MOUSEEVENTF_WHEEL;
-        INPUT_SEND(input);
+    if (j == 0) {
+        delete[] inputs;
+        return true;
     }
 
-    if (x != 0 || y != 0)
-    {
-        input.mi.dwFlags = 0;
-        INPUT_SEND(input);
-    }
-    return true;
-}
-
-bool f_press_key(bool is_ascii, int got)
-{
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = is_ascii ? VkKeyScanA(static_cast<CHAR>(got)) : got;
-    input.ki.dwFlags = 0;
-    INPUT_SEND(input);
-
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
-    INPUT_SEND(input);
-    return true;
-}
-
-bool f_key_down(bool is_ascii, int got)
-{
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = is_ascii ? VkKeyScanA(static_cast<CHAR>(got)) : got;
-    input.ki.dwFlags = 0;
-    INPUT_SEND(input);
-    return true;
-}
-
-bool f_key_up(bool is_ascii, int got)
-{
-    INPUT input;
-    input.type = INPUT_KEYBOARD;
-    input.ki.wVk = is_ascii ? VkKeyScanA(static_cast<CHAR>(got)) : got;
-    input.ki.dwFlags = KEYEVENTF_KEYUP;
-    INPUT_SEND(input);
-    return true;
-}
-
-int f_show_message_box(char *textBuf, char *captionBuf, int flags)
-{
-    LPCWSTR textW = to_lpcwstr(textBuf);
-    LPCWSTR captionW = to_lpcwstr(captionBuf);
-
-    int res = MessageBoxW(NULL, textW, captionW, flags);
-
-    delete[] textW;
-    delete[] captionW;
+    bool res = SendInput(j, inputs, sizeof(INPUT)) == j;
+    delete[] inputs;
     return res;
 }
 
-INT_PTR CALLBACK CustomMessageBoxProc(HWND hwndDlg, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-    switch (uMsg)
-    {
-    case WM_INITDIALOG:
-        return TRUE;
-
-    case WM_COMMAND:
-        switch (LOWORD(wParam))
-        {
-        case IDOK:
-        {
-            char buffer[256];
-            LPWSTR lpwstr = to_lpwstr(buffer);
-            LPCWSTR lpcwstr = to_lpcwstr(buffer);
-            GetDlgItemTextW(hwndDlg, IDC_EDIT, lpwstr, sizeof(buffer));
-            MessageBoxW(hwndDlg, lpcwstr, L"User Input", MB_OK | MB_ICONINFORMATION);
-            delete[] lpwstr;
-            delete[] lpcwstr;
-            EndDialog(hwndDlg, 0);
-        }
-            return TRUE;
-
-        case IDCANCEL:
-            EndDialog(hwndDlg, 0);
-            return TRUE;
-        }
-        break;
-    }
-    return FALSE;
-}
-
-int f_show_prompt()
-{
-    return DialogBox(GetModuleHandle(NULL), MAKEINTRESOURCE(IDD_CUSTOM_DIALOG), NULL, CustomMessageBoxProc);
-}
+#endif
