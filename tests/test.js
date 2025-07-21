@@ -1,3 +1,3 @@
-const pkg = require("../index.js");
+const gui = require("../index");
 
-pkg.keyboard.press("a");
+gui.mouse.scroll(10);

@@ -1,6 +1,6 @@
 {
   "name": "jsautogui",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "JSAutoGUI is an npm package for node.js. Inspired by pyautogui from python. (but noticably faster and better)",
   "main": "index.js",
   "types": "index.d.ts",
@@ -15,12 +15,14 @@
   "scripts": {
     "build": "tsc && node-gyp clean && node-gyp configure && node-gyp rebuild",
     "test-build": "npm run build && node tests/test.js",
-    "test": "node tests/test.js",
+    "test": "tsc && node tests/test.js",
     "install": "node-gyp clean && node-gyp configure && node-gyp build",
     "prepublishOnly": "tsc"
   },
+  "author": "OguzhanUmutlu",
   "license": "MIT",
   "dependencies": {
+    "jstweening": "^1.0.1",
     "node-gyp": "^11.2.0"
   }
 }

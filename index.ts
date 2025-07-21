@@ -1,5 +1,8 @@
 // @ts-ignore
 import __native from "./build/Release/jsautogui.node";
+import * as tween from "jstweening";
+import {linear} from "jstweening";
+
 const native = <NATIVE_API>__native;
 
 type int32 = number;
@@ -49,7 +52,7 @@ const modifiers: string[] = [
     "command", "option", "optionleft", "optionright"
 ] as const;
 
-type TweenFunction = (start: number, end: number, t: number) => number;
+type TweenFunction = (t: number) => number;
 
 type AllMouseButtons = "primary" | "secondary" | "left" | "right" | "middle";
 
@@ -76,14 +79,6 @@ function perm(s: string): never {
     throw new Error(`Couldn't ${s}, is the program lacking some permissions?`);
 }
 
-function linear(a: number, b: number, t: number): number {
-    return a + (b - a) * t;
-}
-
-function quadratic(a: number, b: number, t: number): number {
-    return a + (b - a) * t * t;
-}
-
 type Interval = ReturnType<typeof setInterval>;
 
 function applyMovement(x1: number, y1: number, x2: number, y2: number, duration: number, tween: TweenFunction) {
@@ -100,10 +95,9 @@ function applyMovement(x1: number, y1: number, x2: number, y2: number, duration:
                 clearInterval(interval);
                 resolve();
             } else {
-                API.mouse.setPosition(
-                    tween(x1, x2, t / duration),
-                    tween(y1, y2, t / duration)
-                );
+                const rt = t / duration;
+                const tw = tween(rt);
+                API.mouse.setPosition(x1 + (x2 - x1) * tw, y1 + (y2 - y1) * tw);
             }
         });
     });
@@ -153,6 +147,12 @@ function hotkeyPress(keys: string[]): void {
     ]));
 }
 
+function xyFix(x: number, y: number, min = 0) {
+    x = Math.min(INT32_MAX, Math.max(min, Math.round(x)));
+    y = Math.min(INT32_MAX, Math.max(min, Math.round(y)));
+    return [x, y];
+}
+
 let callPause = 0;
 let failSafe = false;
 let failSafeInterval = <Interval>null!;
@@ -189,7 +189,6 @@ const API = {
     },
     mouse: {
         LinearTween: linear,
-        QuadraticTween: quadratic,
         get position() {
             return this.getPosition();
         },
@@ -229,41 +228,42 @@ const API = {
             return <{ x: number, y: number }>obj;
         },
         setPosition(x: number, y: number) {
-            eInt32(x, "mouse.position.x");
-            eInt32(y, "mouse.position.y");
-            eSize(x, 0, INT32_MAX, "mouse.position.x");
-            eSize(y, 0, INT32_MAX, "mouse.position.y");
+            [x, y] = xyFix(x, y);
             if (!native.set_mouse_pos(x, y)) return perm("set the position of the mouse");
         },
         moveTo(x: number, y: number, duration = 0, tween: TweenFunction = linear) {
-            eInt32(x, "x");
-            eInt32(y, "y");
-            eSize(x, 0, INT32_MAX, "x");
-            eSize(y, 0, INT32_MAX, "y");
+            [x, y] = xyFix(x, y);
             eInt32(duration, "duration");
-            if (duration === 0) return native.set_mouse_pos(x, y);
+            if (duration === 0) {
+                this.setPosition(x, y);
+                return {wait: () => null, cancel: () => null};
+            }
             eType(tween, "function", "mouse.moveTo.tween");
             const start = native.get_mouse_pos();
             return applyMovement(start.x, start.y, x, y, duration, tween);
         },
         moveRel(dx: number, dy: number, duration = 0, tween: TweenFunction = linear) {
-            eInt32(dx, "x");
-            eInt32(dy, "y");
+            [dx, dy] = xyFix(dx, dy, 0);
             eInt32(duration, "duration");
-            if (duration === 0) return native.set_mouse_pos_rel(dx, dy) || perm("set the position of the mouse");
+            if (duration === 0) {
+                native.set_mouse_pos_rel(dx, dy) || perm("set the position of the mouse");
+                return {wait: () => null, cancel: () => null};
+            }
             const start = native.get_mouse_pos();
             const x0 = start.x, y0 = start.y;
             return applyMovement(x0, y0, x0 + dx, y0 + dx, duration, tween);
         },
         dragTo(x: number, y: number, button: AllMouseButtons = "primary", duration = 0, tween: TweenFunction = linear) {
+            [x, y] = xyFix(x, y);
             this.down(button);
             const r = this.moveTo(x, y, duration, tween);
             if (r instanceof Promise) return r.then(() => this.up(button));
             this.up(button);
         },
-        dragRel(x: number, y: number, button: AllMouseButtons = "primary", duration = 0, tween = linear) {
+        dragRel(dx: number, dy: number, button: AllMouseButtons = "primary", duration = 0, tween = linear) {
+            [dx, dy] = xyFix(dx, dy, 0);
             this.down(button);
-            const r = this.moveRel(x, y, duration, tween);
+            const r = this.moveRel(dx, dy, duration, tween);
             if (r instanceof Promise) return r.then(() => this.up(button));
             this.up(button);
         },
@@ -288,9 +288,12 @@ const API = {
             if (mouseButtons.includes(button)) return (native as any)["click_" + button]() || perm("click a button in mouse");
             throw new Error("Expected the button argument to be 'right', 'left', 'middle', 'primary', 'secondary'. Got: " + button);
         },
-        scroll(x = 0, y = 0) {
-            eInt32(x, "x");
-            eInt32(y, "y");
+        scroll(y = 0, x = 0) {
+            [x, y] = xyFix(x, y, INT32_MIN);
+            if (!native.mouse_scroll(x, y)) perm("scroll the wheel of mouse");
+        },
+        hscroll(x = 0, y = 0) {
+            [x, y] = xyFix(x, y, INT32_MIN);
             if (!native.mouse_scroll(x, y)) perm("scroll the wheel of mouse");
         }
     },
@@ -339,4 +342,6 @@ const API = {
     }
 };
 
-export = API;
+Object.assign(API, tween);
+
+export = API as typeof API & typeof tween;
