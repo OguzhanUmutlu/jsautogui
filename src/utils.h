@@ -1,14 +1,12 @@
 #pragma once
-#include <optional>
 #include <cstdint>
 
-using namespace std;
-
 struct Point {
+    bool invalid;
     long x;
     long y;
 
-    constexpr explicit Point(long x = 0, long y = 0) : x(x), y(y) {
+    constexpr explicit Point(long x = 0, long y = 0, bool invalid = false) : invalid(invalid), x(x), y(y) {
     }
 };
 
@@ -25,9 +23,9 @@ struct KeyPressInfo {
     uint16_t key;
 };
 
-optional<Point> f_get_screen_size();
+Point f_get_screen_size();
 
-optional<Point> f_get_cursor_position();
+Point f_get_cursor_position();
 
 bool f_set_cursor_position(int x, int y);
 

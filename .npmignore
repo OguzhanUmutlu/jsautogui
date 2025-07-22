@@ -5,7 +5,7 @@ package-lock.json
 tests
 .gitignore
 .npmignore
-src
+src/test.cpp
 cmake-build-debug
 cmake-build-debug-wsl
 CMakeLists.txt

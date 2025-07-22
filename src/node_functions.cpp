@@ -8,7 +8,7 @@ int32_t callPause = 0;
 
 void do_call_pause() {
     if (callPause > 0) {
-        this_thread::sleep_for(chrono::milliseconds(callPause / 1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(callPause / 1000));
     }
 }
 
@@ -24,23 +24,23 @@ napi_value get_screen_size(napi_env env, napi_callback_info info) {
     do_call_pause();
     napi_value posObject = create_object(env);
     auto size = f_get_screen_size();
-    if (size.has_value()) return nullptr;
-    set_object_key(env, posObject, "width", create_int32(env, size.value().x));
-    set_object_key(env, posObject, "height", create_int32(env, size.value().y));
+    if (size.invalid) return nullptr;
+    set_object_key(env, posObject, "width", create_int32(env, size.x));
+    set_object_key(env, posObject, "height", create_int32(env, size.y));
     return posObject;
 }
 
 napi_value set_mouse_pos_rel(napi_env env, napi_callback_info info) {
     do_call_pause();
     auto cursorPos = f_get_cursor_position();
-    if (!cursorPos.has_value()) return nullptr;
+    if (cursorPos.invalid) return nullptr;
     size_t argc = 2;
     napi_value args[2];
     prepare_args(env, info, argc, args);
 
     return create_bool(env, f_set_cursor_position(
-                           read_int32(env, args[0]) + cursorPos.value().x,
-                           read_int32(env, args[1]) + cursorPos.value().y));
+                           read_int32(env, args[0]) + cursorPos.x,
+                           read_int32(env, args[1]) + cursorPos.y));
 }
 
 napi_value set_mouse_pos(napi_env env, napi_callback_info info) {
@@ -55,30 +55,30 @@ napi_value set_mouse_pos(napi_env env, napi_callback_info info) {
 napi_value set_mouse_x(napi_env env, napi_callback_info info) {
     do_call_pause();
     auto cursorPos = f_get_cursor_position();
-    if (!cursorPos.has_value()) return nullptr;
+    if (cursorPos.invalid) return nullptr;
     size_t argc = 1;
     napi_value args[1];
     prepare_args(env, info, argc, args);
-    return create_bool(env, f_set_cursor_position(read_int32(env, args[0]), cursorPos.value().y));
+    return create_bool(env, f_set_cursor_position(read_int32(env, args[0]), cursorPos.y));
 }
 
 napi_value set_mouse_y(napi_env env, napi_callback_info info) {
     do_call_pause();
     auto cursorPos = f_get_cursor_position();
-    if (!cursorPos.has_value()) return nullptr;
+    if (cursorPos.invalid) return nullptr;
     size_t argc = 1;
     napi_value args[1];
     prepare_args(env, info, argc, args);
-    return create_bool(env, f_set_cursor_position(cursorPos.value().x, read_int32(env, args[0])));
+    return create_bool(env, f_set_cursor_position(cursorPos.x, read_int32(env, args[0])));
 }
 
 napi_value get_mouse_pos(napi_env env, napi_callback_info info) {
     do_call_pause();
     auto cursorPos = f_get_cursor_position();
-    if (!cursorPos.has_value()) return nullptr;
+    if (cursorPos.invalid) return nullptr;
     napi_value posObject = create_object(env);
-    set_object_key(env, posObject, "x", create_int32(env, cursorPos.value().x));
-    set_object_key(env, posObject, "y", create_int32(env, cursorPos.value().y));
+    set_object_key(env, posObject, "x", create_int32(env, cursorPos.x));
+    set_object_key(env, posObject, "y", create_int32(env, cursorPos.y));
     return posObject;
 }
 

@@ -5,22 +5,22 @@
 #include <thread>
 #include <vector>
 
-#include "utils.h"
+#include "../utils.h"
 #include "../main.h"
 
 // in progress
 
-optional<Point> f_get_screen_size() {
+Point f_get_screen_size() {
     CGDirectDisplayID displayID = kCGDirectMainDisplay;
     CGRect bounds = CGDisplayBounds(displayID); // main screen
-    return make_optional(Point(static_cast<int>(bounds.size.width), static_cast<int>(bounds.size.height)));
+    return Point(static_cast<int>(bounds.size.width), static_cast<int>(bounds.size.height));
 }
 
-optional<Point> f_get_cursor_position() {
+Point f_get_cursor_position() {
     CGEventRef event = CGEventCreate(NULL);
     CGPoint cursor = CGEventGetLocation(event);
     CFRelease(event);
-    return make_optional(Point(cursor.x, cursor.y));
+    return Point(cursor.x, cursor.y);
 }
 
 bool f_set_cursor_position(int x, int y) {

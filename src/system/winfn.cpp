@@ -1,11 +1,8 @@
 #ifdef _WIN32
-#include "utils.h"
-
-using namespace std;
+#include "../utils.h"
 
 #include <Windows.h>
 #include <iostream>
-#include <optional>
 #include "../main.h"
 
 #define IDD_CUSTOM_DIALOG 101
@@ -27,14 +24,14 @@ const WORD MODIFIERS[] = {
     VK_LMENU, VK_RMENU
 };
 
-optional<Point> f_get_screen_size() {
-    return make_optional(Point{GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN)});
+Point f_get_screen_size() {
+    return Point(GetSystemMetrics(SM_CXSCREEN), GetSystemMetrics(SM_CYSCREEN));
 }
 
-optional<Point> f_get_cursor_position() {
+Point f_get_cursor_position() {
     POINT point;
-    if (!GetCursorPos(&point)) return nullopt;
-    return make_optional(Point(point.x, point.y));
+    if (!GetCursorPos(&point)) return Point(0, 0, true);
+    return Point(point.x, point.y);
 }
 
 bool f_set_cursor_position(int x, int y) {
@@ -115,7 +112,8 @@ bool f_keys_press(const KeyPressInfo *ch, size_t amount) {
     size_t j = 0;
 
     for (size_t i = 0; i < amount; i++) {
-        switch (auto [down,up, mode, key] = ch[i]; mode) {
+        auto [down,up, mode, key] = ch[i];
+        switch (mode) {
             case KeyPressMode::ASCII: {
                 SHORT scan = VkKeyScanA(static_cast<char>(key));
                 if (scan == -1) continue;
@@ -152,7 +150,7 @@ bool f_keys_press(const KeyPressInfo *ch, size_t amount) {
                 break;
             }
             case KeyPressMode::SPECIAL: {
-                if (key >= size(MODIFIERS)) continue;
+                if (key >= sizeof(MODIFIERS) / sizeof(WORD)) continue;
                 if (down) {
                     inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = MODIFIERS[key]}};
                 }

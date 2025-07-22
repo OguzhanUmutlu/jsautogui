@@ -3,7 +3,6 @@
 
 #include <node_api.h>
 #include <iostream>
-#include <optional>
 
 #define NC(env, call, err)                                                \
     do                                                                    \

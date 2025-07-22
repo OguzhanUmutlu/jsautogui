@@ -8,7 +8,7 @@
 #include <thread>
 #include <vector>
 
-#include "utils.h"
+#include "../utils.h"
 #include "../main.h"
 
 #define XK_accept 0
@@ -54,17 +54,17 @@ static const KeySym MODIFIERS[] = {
         return (ret);                         \
     }
 
-optional<Point> f_get_screen_size() {
+Point f_get_screen_size() {
     Display *display = XOpenDisplay(nullptr);
-    if (!display) return nullopt;
+    if (!display) return Point(0, 0, true);
     int screen_num = DefaultScreen(display);
     XCloseDisplay(display);
-    return make_optional(Point(DisplayWidth(display, screen_num), DisplayHeight(display, screen_num)));
+    return Point(DisplayWidth(display, screen_num), DisplayHeight(display, screen_num));
 }
 
-optional<Point> f_get_cursor_position() {
+Point f_get_cursor_position() {
     Display *display = XOpenDisplay(nullptr);
-    if (!display) return nullopt;
+    if (!display) return Point(0, 0, true);
     Window rootWindow = DefaultRootWindow(display);
     XEvent event;
     XQueryPointer(display, rootWindow, &event.xbutton.root, &event.xbutton.window,
@@ -72,7 +72,7 @@ optional<Point> f_get_cursor_position() {
                   &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
     XFlush(display);
     XCloseDisplay(display);
-    return make_optional(Point(event.xbutton.x_root, event.xbutton.y_root));
+    return Point(event.xbutton.x_root, event.xbutton.y_root);
 }
 
 bool f_set_cursor_position(int x, int y) {

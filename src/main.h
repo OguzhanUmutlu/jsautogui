@@ -1,8 +1,4 @@
 #pragma once
-#include <optional>
-#include <vector>
-
-using namespace std;
 
 #include <node_api.h>
 
