@@ -190,12 +190,12 @@ napi_value keys_press(napi_env env, napi_callback_info info) {
     auto uint32_data = static_cast<uint32_t *>(data);
     for (size_t i = 0; i < length; ++i) {
         auto u = uint32_data[i];
-        presses[i] = {
-            .down = (u & (1 << 20)) != 0,
-            .up = (u & (1 << 19)) != 0,
-            .mode = static_cast<KeyPressMode>((u >> 16) & 3),
-            .key = static_cast<uint16_t>(u & 0xFFFF)
-        };
+        KeyPressInfo press;
+        press.down = (u & (1 << 20)) != 0;
+        press.up = (u & (1 << 19)) != 0;
+        press.mode = static_cast<KeyPressMode>((u >> 16) & 3);
+        press.key = static_cast<uint16_t>(u & 0xFFFF);
+        presses[i] = press;
     }
 
     return create_bool(env, f_keys_press(presses, length));

@@ -3,7 +3,6 @@
 
 #include <Windows.h>
 #include <iostream>
-#include "../main.h"
 
 #define IDD_CUSTOM_DIALOG 101
 #define IDC_EDIT 102
@@ -51,7 +50,9 @@ bool f_is_mouse_middle_down() {
 }
 
 inline bool send_mouse_event(DWORD flags) {
-    INPUT input = {.type = INPUT_MOUSE, .mi = {.dwFlags = flags}};
+    INPUT input;
+    input.type = INPUT_MOUSE;
+    input.mi.dwFlags = flags;
     return SendInput(1, &input, sizeof(INPUT)) == 1;
 }
 
@@ -100,65 +101,111 @@ bool f_mouse_scroll(unsigned long x, unsigned long y) {
     INPUT inputs[2];
     unsigned int i = 0;
 
-    if (x != 0) inputs[i++] = {.type = INPUT_MOUSE, .mi = {.mouseData = x, .dwFlags = MOUSEEVENTF_HWHEEL}};
-    if (y != 0) inputs[i++] = {.type = INPUT_MOUSE, .mi = {.mouseData = y, .dwFlags = MOUSEEVENTF_WHEEL}};
+    INPUT input;
+    input.type = INPUT_MOUSE;
+    input.mi.dx = 0;
+    input.mi.dy = 0;
+    input.mi.time = 0;
+    input.mi.dwExtraInfo = 0;
+
+    if (x != 0) {
+        input.mi.mouseData = x;
+        input.mi.dwFlags = MOUSEEVENTF_WHEEL;
+        inputs[i++] = input;
+    }
+    if (y != 0) {
+        input.mi.mouseData = y;
+        input.mi.dwFlags = MOUSEEVENTF_HWHEEL;
+        inputs[i++] = input;
+    }
 
     return SendInput(i, inputs, sizeof(INPUT)) == i;
 }
 
-bool f_keys_press(const KeyPressInfo *ch, size_t amount) {
+bool f_keys_press(const KeyPressInfo* ch, size_t amount) {
     auto inputs = new INPUT[amount * 8]; // A single key can possibly trigger 7 more
 
     size_t j = 0;
 
+    INPUT input;
+    input.type = INPUT_KEYBOARD;
+    input.ki.wScan = 0;
+    input.ki.dwFlags = 0;
+    input.ki.time = 0;
+    input.ki.dwExtraInfo = 0;
+
     for (size_t i = 0; i < amount; i++) {
         auto [down,up, mode, key] = ch[i];
         switch (mode) {
-            case KeyPressMode::ASCII: {
-                SHORT scan = VkKeyScanA(static_cast<char>(key));
-                if (scan == -1) continue;
-                BYTE vk = LOBYTE(scan);
-                BYTE state = HIBYTE(scan);
-                if (down) {
-                    if (state & 1) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_SHIFT}};
-                    if (state & 2) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_CONTROL}};
-                    if (state & 4) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_MENU}};
-                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = vk}};
+        case KeyPressMode::ASCII: {
+            SHORT scan = VkKeyScanA(static_cast<char>(key));
+            if (scan == -1) continue;
+            BYTE vk = LOBYTE(scan);
+            BYTE state = HIBYTE(scan);
+            input.ki.wScan = 0;
+            if (down) {
+                input.ki.dwFlags = 0;
+                if (state & 1) {
+                    input.ki.wVk = VK_SHIFT;
+                    inputs[j++] = input;
                 }
-                if (up) {
-                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = vk, .dwFlags = KEYEVENTF_KEYUP}};
-                    constexpr DWORD uf = KEYEVENTF_KEYUP;
-                    if (state & 4) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_MENU, .dwFlags = uf}};
-                    if (state & 2) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_CONTROL, .dwFlags = uf}};
-                    if (state & 1) inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = VK_SHIFT, .dwFlags = uf}};
+                if (state & 2) {
+                    input.ki.wVk = VK_CONTROL;
+                    inputs[j++] = input;
                 }
-                break;
+                if (state & 4) {
+                    input.ki.wVk = VK_MENU;
+                    inputs[j++] = input;
+                }
+                input.ki.wVk = vk;
+                inputs[j++] = input;
             }
-            case KeyPressMode::UNICODE: {
-                if (down) {
-                    inputs[j++] = {
-                        .type = INPUT_KEYBOARD,
-                        .ki = {.wVk = 0, .wScan = key, .dwFlags = KEYEVENTF_UNICODE}
-                    };
+            if (up) {
+                input.ki.dwFlags = KEYEVENTF_KEYUP;
+                input.ki.wVk = vk;
+                if (state & 4) {
+                    input.ki.wVk = VK_MENU;
+                    inputs[j++] = input;
                 }
-                if (up) {
-                    inputs[j++] = {
-                        .type = INPUT_KEYBOARD,
-                        .ki = {.wVk = 0, .wScan = key, .dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP}
-                    };
+                if (state & 2) {
+                    input.ki.wVk = VK_CONTROL;
+                    inputs[j++] = input;
                 }
-                break;
+                if (state & 1) {
+                    input.ki.wVk = VK_SHIFT;
+                    inputs[j++] = input;
+                }
             }
-            case KeyPressMode::SPECIAL: {
-                if (key >= sizeof(MODIFIERS) / sizeof(WORD)) continue;
-                if (down) {
-                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = MODIFIERS[key]}};
-                }
-                if (up) {
-                    inputs[j++] = {.type = INPUT_KEYBOARD, .ki = {.wVk = MODIFIERS[key], .dwFlags = KEYEVENTF_KEYUP}};
-                }
-                break;
+            break;
+        }
+        case KeyPressMode::UNICODE: {
+            input.ki.wVk = 0;
+            input.ki.wScan = key;
+            if (down) {
+                input.ki.dwFlags = KEYEVENTF_UNICODE;
+                inputs[j++] = input;
             }
+            if (up) {
+                input.ki.dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP;
+                inputs[j++] = input;
+            }
+            break;
+        }
+        case KeyPressMode::SPECIAL: {
+            if (key >= sizeof(MODIFIERS) / sizeof(WORD)) continue;
+            input.ki.wScan = 0;
+            if (down) {
+                input.ki.wVk = MODIFIERS[key];
+                input.ki.dwFlags = 0;
+                inputs[j++] = input;
+            }
+            if (up) {
+                input.ki.wVk = MODIFIERS[key];
+                input.ki.dwFlags = KEYEVENTF_KEYUP;
+                inputs[j++] = input;
+            }
+            break;
+        }
         }
     }
 
