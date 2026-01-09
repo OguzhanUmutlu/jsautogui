@@ -4,12 +4,11 @@
 #include <X11/keysym.h>
 #include <X11/extensions/XTest.h>
 #include <unistd.h>
-#include <cstdio>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "../utils.h"
-#include "../main.h"
 
 #define XK_accept 0
 #define XK_Favorites 0
@@ -33,18 +32,40 @@
 #define XK_Yen 0
 
 static const KeySym MODIFIERS[] = {
-    XK_accept, XK_plus, XK_Alt_L, XK_Alt_L, XK_Alt_R, XK_Menu, XK_BackSpace, XK_BackSpace, XK_Favorites, XK_Forward,
-    XK_HomePage, XK_Refresh, XK_Search, XK_Stop, XK_Caps_Lock, XK_Num_Lock, 0, XK_Control_L, XK_Control_L, XK_Control_R,
-    XK_period, XK_Delete, XK_Delete, XK_division, XK_Down, XK_End, XK_Return, XK_Escape, XK_Escape, 0, XK_F1, XK_F10,
-    XK_F11, XK_F12, XK_F13, XK_F14, XK_F15, XK_F16, XK_F17, XK_F18, XK_F19, XK_F2, XK_F20, XK_F21, XK_F22, XK_F23,
-    XK_F24, XK_F3, XK_F4, XK_F5, XK_F6, XK_F7, XK_F8, XK_F9, 0, XK_Hangul, XK_Hangul, XK_Hangul_Hanja, XK_Help, XK_Home,
-    XK_Insert, 0, XK_Kana_Lock, XK_Kanji, XK_Launch0, XK_Launch1, XK_LaunchMail, XK_LaunchMusic, XK_Left, 0,
-    XK_multiply, XK_AudioNext, 0, XK_KP_0, XK_KP_1, XK_KP_2, XK_KP_3, XK_KP_4, XK_KP_5, XK_KP_6, XK_KP_7, XK_KP_8,
-    XK_KP_9, XK_Num_Lock, XK_Page_Down, XK_Page_Up, XK_Pause, XK_Page_Down, XK_Page_Up, XK_AudioPlay, XK_AudioPrev,
-    XK_Print, XK_Print, XK_Print, XK_Print, XK_Print, XK_Return, XK_Right, XK_Scroll_Lock, 0, XK_KP_Separator,
-    XK_Shift_L, XK_Shift_L, XK_Shift_R, XK_Sleep, XK_space, XK_AudioStop, XK_minus, XK_Tab, XK_Up, XK_AudioLowerVolume,
-    XK_AudioMute, XK_AudioRaiseVolume, XK_Super_L, XK_Super_L, XK_Super_R, XK_Yen, XK_Meta_L, XK_Alt_L, XK_Alt_L,
-    XK_Alt_R
+    // accept, add, alt, altleft, altright, apps, backspace,
+    XK_accept, XK_KP_Add, XK_Alt_L, XK_Alt_L, XK_Alt_R, XK_Menu, XK_BackSpace,
+    // browserback, browserfavorites, browserforward, browserhome,
+    0, XK_Favorites, XK_Forward, XK_HomePage,
+    // browserrefresh, browsersearch, browserstop, capslock, clear,
+    XK_Refresh, XK_Search, XK_Stop, XK_Caps_Lock, XK_Clear,
+    // convert, ctrl, ctrlleft, ctrlright, decimal, del, delete,
+    0, XK_Control_L, XK_Control_L, XK_Control_R, XK_KP_Decimal, XK_Delete, XK_Delete,
+    // divide, down, end, enter, esc, escape, execute, f1, f10,
+    XK_KP_Divide, XK_Down, XK_End, XK_Return, XK_Escape, XK_Escape, XK_Execute, XK_F1, XK_F10,
+    // f11, f12, f13, f14, f15, f16, f17, f18, f19, f2, f20,
+    XK_F11, XK_F12, XK_F13, XK_F14, XK_F15, XK_F16, XK_F17, XK_F18, XK_F19, XK_F2, XK_F20,
+    // f21, f22, f23, f24, f3, f4, f5, f6, f7, f8, f9,
+    XK_F21, XK_F22, XK_F23, XK_F24, XK_F3, XK_F4, XK_F5, XK_F6, XK_F7, XK_F8, XK_F9,
+    // final, hanguel, hangul, hanja, help, home, insert, junja,
+    0, XK_Hangul, XK_Hangul, XK_Hangul_Hanja, XK_Help, XK_Home, XK_Insert, 0,
+    // kana, kanji, launchapp1, launchapp2, launchmail,
+    XK_Kana_Lock, XK_Kanji, XK_Launch0, XK_Launch1, XK_LaunchMail,
+    // launchmediaselect, left, modechange, multiply, nexttrack,
+    XK_LaunchMusic, XK_Left, 0, XK_KP_Multiply, XK_AudioNext,
+    // nonconvert, num0, num1, num2, num3, num4, num5, num6,
+    0, XK_KP_0, XK_KP_1, XK_KP_2, XK_KP_3, XK_KP_4, XK_KP_5, XK_KP_6,
+    // num7, num8, num9, numlock, pagedown, pageup, pause, pgdn,
+    XK_KP_7, XK_KP_8, XK_KP_9, XK_Num_Lock, XK_Page_Down, XK_Page_Up, XK_Pause, XK_Page_Down,
+    // pgup, playpause, prevtrack, print, printscreen, prntscrn,
+    XK_Page_Up, XK_AudioPlay, XK_AudioPrev, XK_Print, XK_Print, XK_Print,
+    // prtsc, prtscr, return, right, scrolllock, select, separator,
+    XK_Print, XK_Print, XK_Return, XK_Right, XK_Scroll_Lock, 0, XK_KP_Separator,
+    // shift, shiftleft, shiftright, sleep, space, stop, subtract, tab,
+    XK_Shift_L, XK_Shift_L, XK_Shift_R, XK_Sleep, XK_space, XK_AudioStop, XK_KP_Subtract, XK_Tab,
+    // up, volumedown, volumemute, volumeup, win, winleft, winright, yen,
+    XK_Up, XK_AudioLowerVolume, XK_AudioMute, XK_AudioRaiseVolume, XK_Super_L, XK_Super_L, XK_Super_R, XK_Yen,
+    // command, option, optionleft, optionright
+    XK_Meta_L, XK_Alt_L, XK_Alt_L, XK_Alt_R
 };
 
 #define GetDisplay(ret)                       \
@@ -54,17 +75,19 @@ static const KeySym MODIFIERS[] = {
         return (ret);                         \
     }
 
-Point f_get_screen_size() {
-    Display *display = XOpenDisplay(nullptr);
-    if (!display) return Point(0, 0, true);
+ScreenPoint f_get_screen_size() {
+    Display* display = XOpenDisplay(nullptr);
+    if (!display) return ScreenPoint(0, 0, true);
     int screen_num = DefaultScreen(display);
+    int width = DisplayWidth(display, screen_num);
+    int height = DisplayHeight(display, screen_num);
     XCloseDisplay(display);
-    return Point(DisplayWidth(display, screen_num), DisplayHeight(display, screen_num));
+    return ScreenPoint(width, height);
 }
 
-Point f_get_cursor_position() {
-    Display *display = XOpenDisplay(nullptr);
-    if (!display) return Point(0, 0, true);
+ScreenPoint f_get_cursor_position() {
+    Display* display = XOpenDisplay(nullptr);
+    if (!display) return ScreenPoint(0, 0, true);
     Window rootWindow = DefaultRootWindow(display);
     XEvent event;
     XQueryPointer(display, rootWindow, &event.xbutton.root, &event.xbutton.window,
@@ -72,11 +95,11 @@ Point f_get_cursor_position() {
                   &event.xbutton.x, &event.xbutton.y, &event.xbutton.state);
     XFlush(display);
     XCloseDisplay(display);
-    return Point(event.xbutton.x_root, event.xbutton.y_root);
+    return ScreenPoint(event.xbutton.x_root, event.xbutton.y_root);
 }
 
 bool f_set_cursor_position(int x, int y) {
-    Display *display = XOpenDisplay(nullptr);
+    Display* display = XOpenDisplay(nullptr);
     if (!display) return false;
     XWarpPointer(display, None, DefaultRootWindow(display), 0, 0, 0, 0, x, y);
     XFlush(display);
@@ -171,7 +194,7 @@ bool f_is_mouse_swapped() {
 bool f_mouse_scroll(unsigned long x, unsigned long y) {
     GetDisplay(false);
     // TODO: horizontal scrolling
-    for (int i = 0; i < y; ++i) {
+    for (unsigned long i = 0; i < y; ++i) {
         XTestFakeButtonEvent(display, Button4, True, CurrentTime);
         XFlush(display);
         usleep(10000);
@@ -182,8 +205,8 @@ bool f_mouse_scroll(unsigned long x, unsigned long y) {
     return true;
 }
 
-bool f_keys_press(const KeyPressInfo *ch, size_t amount) {
-    Display *disp = XOpenDisplay(nullptr);
+bool f_keys_press(const KeyPressInfo* ch, size_t amount) {
+    Display* disp = XOpenDisplay(nullptr);
     if (!disp) return false;
 
     int ev, er;
@@ -197,15 +220,15 @@ bool f_keys_press(const KeyPressInfo *ch, size_t amount) {
         KeySym ks = NoSymbol;
 
         switch (mode) {
-            case KeyPressMode::ASCII:
-                ks = XStringToKeysym(std::string(1, static_cast<char>(key)).c_str());
-                break;
-            case KeyPressMode::UNICODE:
-                // todo: unicode support
-                break;
-            case KeyPressMode::SPECIAL:
-                if (key < size(MODIFIERS)) ks = MODIFIERS[key];
-                break;
+        case KeyPressMode::ASCII:
+            ks = XStringToKeysym(std::string(1, static_cast<char>(key)).c_str());
+            break;
+        case KeyPressMode::UNICODE:
+            // todo: unicode support
+            break;
+        case KeyPressMode::SPECIAL:
+            if (key < std::size(MODIFIERS)) ks = MODIFIERS[key];
+            break;
         }
 
         if (ks == NoSymbol) {

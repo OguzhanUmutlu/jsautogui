@@ -8,6 +8,8 @@
 
 You can install the `jsautogui` to your project by typing this in your terminal:
 
+Linux Dependencies: `sudo apt-get install -y libxtst-dev libx11-dev`
+
 ```shell
 npm install jsautogui
 ```
