@@ -188,19 +188,60 @@ bool f_mouse_middle_up() {
 }
 
 bool f_is_mouse_swapped() {
-    return true; // TODO: It really depends on so many things.
+    Display* display = XOpenDisplay(nullptr);
+    if (!display) return false;
+
+    unsigned char map[5];
+    int nmap = XGetPointerMapping(display, map, 5);
+    XCloseDisplay(display);
+
+    if (nmap >= 1 && map[0] != 1) {
+        return true;
+    }
+    return false;
 }
 
-bool f_mouse_scroll(unsigned long x, unsigned long y) {
+bool f_mouse_scroll(long x, long y) {
     GetDisplay(false);
-    // TODO: horizontal scrolling
-    for (unsigned long i = 0; i < y; ++i) {
-        XTestFakeButtonEvent(display, Button4, True, CurrentTime);
-        XFlush(display);
-        usleep(10000);
-        XTestFakeButtonEvent(display, Button4, False, CurrentTime);
-        XFlush(display);
+
+    if (y > 0) {
+        for (long i = 0; i < y; ++i) {
+            XTestFakeButtonEvent(display, Button4, True, CurrentTime);
+            XFlush(display);
+            usleep(10000);
+            XTestFakeButtonEvent(display, Button4, False, CurrentTime);
+            XFlush(display);
+        }
+    } else if (y < 0) {
+        long absY = -y;
+        for (long i = 0; i < absY; ++i) {
+            XTestFakeButtonEvent(display, Button5, True, CurrentTime);
+            XFlush(display);
+            usleep(10000);
+            XTestFakeButtonEvent(display, Button5, False, CurrentTime);
+            XFlush(display);
+        }
     }
+
+    if (x > 0) {
+        for (long i = 0; i < x; ++i) {
+            XTestFakeButtonEvent(display, 7, True, CurrentTime);
+            XFlush(display);
+            usleep(10000);
+            XTestFakeButtonEvent(display, 7, False, CurrentTime);
+            XFlush(display);
+        }
+    } else if (x < 0) {
+        long absX = -x;
+        for (long i = 0; i < absX; ++i) {
+            XTestFakeButtonEvent(display, 6, True, CurrentTime);
+            XFlush(display);
+            usleep(10000);
+            XTestFakeButtonEvent(display, 6, False, CurrentTime);
+            XFlush(display);
+        }
+    }
+
     XCloseDisplay(display);
     return true;
 }
@@ -224,7 +265,11 @@ bool f_keys_press(const KeyPressInfo* ch, size_t amount) {
             ks = XStringToKeysym(std::string(1, static_cast<char>(key)).c_str());
             break;
         case KeyPressMode::UNICODE:
-            // todo: unicode support
+            if (key < 0x100) {
+                ks = key;
+            } else {
+                ks = 0x01000000 | key;
+            }
             break;
         case KeyPressMode::SPECIAL:
             if (key < std::size(MODIFIERS)) ks = MODIFIERS[key];

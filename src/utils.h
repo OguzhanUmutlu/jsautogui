@@ -96,6 +96,6 @@ bool f_mouse_middle_up();
 
 bool f_is_mouse_swapped();
 
-bool f_mouse_scroll(unsigned long x, unsigned long y);
+bool f_mouse_scroll(long x, long y);
 
 bool f_keys_press(const KeyPressInfo* ch, std::size_t amount);

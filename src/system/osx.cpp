@@ -131,9 +131,9 @@ bool f_is_mouse_swapped() {
     return false;
 }
 
-bool f_mouse_scroll(unsigned long x, unsigned long y) {
-    auto scrollXSteps = x;
-    auto scrollYSteps = y;
+bool f_mouse_scroll(long x, long y) {
+    auto scrollXSteps = static_cast<int32_t>(x);
+    auto scrollYSteps = static_cast<int32_t>(y);
     CGEventRef scrollXEvent = CGEventCreateScrollWheelEvent(
         NULL, kCGScrollEventUnitPixel, 2, scrollXSteps);
     CGEventRef scrollYEvent = CGEventCreateScrollWheelEvent(

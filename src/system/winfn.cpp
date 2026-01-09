@@ -117,7 +117,7 @@ bool f_is_mouse_swapped() {
     return GetSystemMetrics(SM_SWAPBUTTON) != 0;
 }
 
-bool f_mouse_scroll(unsigned long x, unsigned long y) {
+bool f_mouse_scroll(long x, long y) {
     if (x == 0 && y == 0) return true;
     INPUT inputs[2];
     unsigned int i = 0;
@@ -130,12 +130,12 @@ bool f_mouse_scroll(unsigned long x, unsigned long y) {
     input.mi.dwExtraInfo = 0;
 
     if (x != 0) {
-        input.mi.mouseData = x;
+        input.mi.mouseData = static_cast<DWORD>(x);
         input.mi.dwFlags = MOUSEEVENTF_WHEEL;
         inputs[i++] = input;
     }
     if (y != 0) {
-        input.mi.mouseData = y;
+        input.mi.mouseData = static_cast<DWORD>(y);
         input.mi.dwFlags = MOUSEEVENTF_HWHEEL;
         inputs[i++] = input;
     }
