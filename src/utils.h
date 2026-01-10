@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <cstddef>
 
 struct ScreenPoint {
     bool invalid;
@@ -98,4 +99,4 @@ bool f_is_mouse_swapped();
 
 bool f_mouse_scroll(long x, long y);
 
-bool f_keys_press(const KeyPressInfo* ch, std::size_t amount);
+bool f_keys_press(const KeyPressInfo* ch, size_t amount);

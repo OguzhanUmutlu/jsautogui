@@ -4,7 +4,7 @@
 #include <node_api.h>
 #include <iostream>
 
-#define NC(env, call, err)                                                \
+#define NC(env, call, err, ret)                                           \
     do                                                                    \
     {                                                                     \
         napi_status status = (call);                                      \
@@ -20,73 +20,73 @@
                                           ? (err)                         \
                                           : error_info->error_message;    \
                 napi_throw_error((env), NULL, message);                   \
-                return NULL;                                              \
+                return ret;                                              \
             }                                                             \
         }                                                                 \
     } while (0);
 
-char *read_string(napi_env env, napi_value value) {
+char* read_string(napi_env env, napi_value value) {
     size_t length;
-    NC(env, napi_get_value_string_utf8(env, value, nullptr, 0, &length), "Couldn't read the length of a string.");
-    char *buffer = new char[length + 1];
+    NC(env, napi_get_value_string_utf8(env, value, nullptr, 0, &length), "Couldn't read the length of a string.", NULL);
+    char* buffer = new char[length + 1];
     NC(env, napi_get_value_string_utf8(env, value, buffer, length + 1, nullptr),
-       "Couldn't read the value of a string.");
+       "Couldn't read the value of a string.", NULL);
     return buffer;
 }
 
 int32_t read_int32(napi_env env, napi_value value) {
     int32_t res;
-    NC(env, napi_get_value_int32(env, value, &res), "Couldn't parse the value to int32_t.");
+    NC(env, napi_get_value_int32(env, value, &res), "Couldn't parse the value to int32_t.", 0);
     return res;
 }
 
 int64_t read_int64(napi_env env, napi_value value) {
     int64_t res;
-    NC(env, napi_get_value_int64(env, value, &res), "Couldn't parse the value to int64_t.");
+    NC(env, napi_get_value_int64(env, value, &res), "Couldn't parse the value to int64_t.", 0);
     return res;
 }
 
 bool read_bool(napi_env env, napi_value value) {
     bool res;
-    NC(env, napi_get_value_bool(env, value, &res), "Couldn't parse the value to bool.");
+    NC(env, napi_get_value_bool(env, value, &res), "Couldn't parse the value to bool.", 0);
     return res;
 }
 
 napi_value create_int32(napi_env env, int32_t value) {
     napi_value res;
-    NC(env, napi_create_int32(env, value, &res), "Couldn't create an int32 value.");
+    NC(env, napi_create_int32(env, value, &res), "Couldn't create an int32 value.", 0);
     return res;
 }
 
 napi_value create_int64(napi_env env, int64_t value) {
     napi_value res;
-    NC(env, napi_create_int64(env, value, &res), "Couldn't create an int64 value.");
+    NC(env, napi_create_int64(env, value, &res), "Couldn't create an int64 value.", 0);
     return res;
 }
 
 napi_value create_bool(napi_env env, bool value) {
     napi_value res;
-    NC(env, napi_get_boolean(env, value, &res), "Couldn't create a bool value.");
+    NC(env, napi_get_boolean(env, value, &res), "Couldn't create a bool value.", 0);
     return res;
 }
 
 napi_value create_object(napi_env env) {
     napi_value res;
-    NC(env, napi_create_object(env, &res), "Couldn't create an object value.");
+    NC(env, napi_create_object(env, &res), "Couldn't create an object value.", 0);
     return res;
 }
 
-int set_object_key(napi_env env, napi_value obj, const char *name, napi_value value) {
-    NC(env, napi_set_named_property(env, obj, name, value), "Couldn't set the key of an object.");
+int set_object_key(napi_env env, napi_value obj, const char* name, napi_value value) {
+    NC(env, napi_set_named_property(env, obj, name, value), "Couldn't set the key of an object.", 0);
     return 0;
 }
 
-int prepare_args(napi_env env, napi_callback_info info, size_t &argc, napi_value *args) {
-    NC(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL), "Couldn't parse the arguments.");
+int prepare_args(napi_env env, napi_callback_info info, size_t& argc, napi_value* args) {
+    NC(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL), "Couldn't parse the arguments.", 0);
     return 0;
 }
 
-void add_function_to_object(napi_env env, napi_value object, const char *name, napi_callback cb) {
+void add_function_to_object(napi_env env, napi_value object, const char* name, napi_callback cb) {
     napi_value fn;
     napi_create_function(env, nullptr, 0, cb, nullptr, &fn);
     napi_set_named_property(env, object, name, fn);

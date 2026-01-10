@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <cstddef>
 #include <node_api.h>
 
 char *read_string(napi_env env, napi_value value);
@@ -21,6 +22,6 @@ napi_value create_object(napi_env env);
 
 int set_object_key(napi_env env, napi_value obj, const char *name, napi_value value);
 
-int prepare_args(napi_env env, napi_callback_info info, std::size_t &argc, napi_value *args);
+int prepare_args(napi_env env, napi_callback_info info, size_t &argc, napi_value *args);
 
 napi_value init(napi_env env, napi_value exports);
