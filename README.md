@@ -1,20 +1,34 @@
 # JSAutoGui
 
-> JSAutoGUI is an npm package for node.js. Inspired by pyautogui from python. (but noticably faster and better)
+> JSAutoGUI is an npm package for Node.js. Inspired by pyautogui from Python (but noticeably faster and better).
 
-![](https://github.com/OguzhanUmutlu/jsautogui/blob/main/tests/code.png)
+![](./tests/code.png)
 
 # How to use?
 
-You can install the `jsautogui` to your project by typing this in your terminal:
+You can install `jsautogui` to your project by typing this in your terminal:
 
-Linux Dependencies: `sudo apt-get install -y libxtst-dev libx11-dev`
+**Linux Dependencies:**
+If you are on Linux (Ubuntu/Debian), install the required dependencies first:
+
+```shell
+sudo apt-get install -y libxtst-dev libx11-dev
+```
+
+**Windows Dependencies:**
+If you are on Windows, you need the build tools to compile the C++ addon.
+
+1. Download and
+   install [Visual Studio Build Tools](https://www.google.com/search?q=https://visualstudio.microsoft.com/visual-cpp-build-tools/).
+2. During installation, ensure you select the **"Desktop development with C++"** workload.
+
+**Install Package:**
 
 ```shell
 npm install jsautogui
 ```
 
-After this you can start using the package by importing it:
+After this, you can start using the package by importing it:
 
 ```js
 import jsautogui from "jsautogui"; // in modulejs
@@ -22,47 +36,60 @@ import jsautogui from "jsautogui"; // in modulejs
 const jsautogui = require("jsautogui"); // in commonjs
 ```
 
-Now you can access the functionalities of jsautogui through this variable!
-
 ### [You can see a list of all functions in here: JSAutoGUI Wiki](https://github.com/OguzhanUmutlu/jsautogui/wiki)
+
+---
 
 # How to contribute/fork/edit?
 
-To alter the C++ codes this project has you have to include some libraries.
+This project mixes **C++** (for native system calls) and **TypeScript** (for the Node.js interface).
 
-#### First start by cloning this project to your local machine by using this command line:
+### 1. Clone and Setup
 
-```git clone https://github.com/OguzhanUmutlu/jsautogui.git```
+Clone the project and install dependencies:
 
-Which should create a `jsautogui` folder into the cd you are in, in your terminal.
-
-#### For anything to work you will need to install Node.js: https://nodejs.org/en/download
-
-#### Then install node-gyp for node's addon api to be integrated by using the following command file:
-
-```
-npm install -g node-gyp
+```bash
+git clone [https://github.com/OguzhanUmutlu/jsautogui.git](https://github.com/OguzhanUmutlu/jsautogui.git)
+cd jsautogui
+npm install
 ```
 
-I am using VSC for editing the C++ editing and Intellij for JS editing.
+### 2. IDE Setup (CLion)
 
-So the rest of the instructions will depend on VSC. (You can contribute to this README by adding more editor instructions!)
+This project is configured to work seamlessly with **CLion** for both C++ and TypeScript development.
 
-#### Install the `C/C++ Extension Pack` in the Extensions tab which is located in the left of the VSC editor.
+1. Open the `jsautogui` folder in CLion.
+2. **C++:** CLion will detect the `CMakeLists.txt` file automatically. This provides full IntelliSense for the native
+   code in `src/`.
+3. **TypeScript:** You can edit `index.ts` directly. CLion uses the included `tsconfig.json` to handle syntax
+   highlighting and errors.
 
-Press `CTRL SHIFT P` in VSC to open up the command palette then type in `C/C++: Edit Configurations (JSON)` and press `Enter`.
+### 3. Building
 
-Now you should have the configuration file created at `.vscode/c_cpp_properties.json`.
+Since this project uses TypeScript, you need to compile the TS files *and* build the C++ addon. I have set up a script
+to handle this automatically:
 
-Now you can add the required paths by putting them in the `includePath`.
+```bash
+# Compiles TypeScript and rebuilds the C++ addon
+npm run build
+```
 
-Now since you have `node` installed you should have the node api files too.
+---
 
-Its location is(usually):
-- For Windows: `C:\Program Files\nodejs\include\node` OR `C:\Users\HP\AppData\Local\node-gyp\Cache\19.8.1\include\node` (replace 19.8.1 with your node version)
-- For Linux: `/usr/include/node`
-- For macOS: `/usr/local/include/node`
+# Testing
 
-Put the path into the `includePath` list and let's continue.
+To ensure your changes work as expected, you can use the built-in test scripts defined in `package.json`.
 
-You will also need the windows and linux(x11) header files. (You can contribute to this README by adding the instructions to install the remaining includePaths!)
+**Run tests (fast):**
+If you have already built the project and just changed the test logic:
+
+```bash
+npm run test
+```
+
+**Build & Run tests (full):**
+If you have modified C++ or TypeScript source code and want to verify everything:
+
+```bash
+npm run test-build
+```
